@@ -1,0 +1,141 @@
+{
+  "manifestConfig": {
+    "name": "CampusFlow",
+    "short_name": "CampusFlow",
+    "description": "Live timetable, academic calendar and course hub.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#0c1220",
+    "theme_color": "#16233b",
+    "icons": [
+      { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+      { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    ]
+  },
+  "data": {
+    "meta": {
+      "semester": "Odd",
+      "year": "2026-27",
+      "updated": "23 Aug 2026",
+      "semStart": "03 Aug 2026",
+      "semEnd": "07 Dec 2026",
+      "radarStart": "01 Jul 2026",
+      "radarEnd": "31 Jan 2027",
+      "defaultRoom": "E-306",
+      "workingSats": [2, 4]
+    },
+    "dayOverrides": [
+      {}
+    ],
+    "timetable": {
+      "periods": {
+        "start": "09:10",
+        "labels": ["1", "2", "3", "4", "5", "lunch", "6", "7", "8"],
+        "durations": [50, 50, 50, 50, 50, 60, 50, 50, 50]
+      },
+      "courses": [
+        { "abbr": "TOC", "code": "CS310L", "name": "Theory of Computation", "credits": 3, "type": "Theory", "faculty": "NKY" },
+        { "abbr": "SE", "code": "CS311L", "name": "Software Engineering and Design Principles", "credits": 3, "type": "Theory", "faculty": "RSR" },
+        { "abbr": "SE-LAB", "code": "CS311P", "name": "Software Engineering and Design Principles Lab", "credits": 1, "type": "Practical", "faculty": "NS/RSR", "room": "E-513" },
+        { "abbr": "DL&GA", "code": "CS312B", "name": "Deep Learning and Gen AI", "credits": 3, "type": "Blended", "faculty": "DP" },
+        { "abbr": "PSL", "code": "CS313P", "name": "Problem Solving Lab-1", "credits": 2, "type": "Practical", "faculty": "HM" },
+        { "abbr": "APT", "code": "HS203L", "name": "Aptitude - 3", "credits": 1, "type": "Theory", "faculty": "MG" },
+        { "abbr": "SSFE", "code": "HS204L", "name": "Soft Skills for Employability - 1", "credits": 2, "type": "Theory", "faculty": "SK" },
+        { "abbr": "ADBMS", "code": "IT401B", "name": "Advance Databases", "credits": 4, "type": "Blended", "faculty": "UM" },
+        { "abbr": "PE", "code": null, "name": "Professional Elective – II", "credits": 4, "type": "Blended", "editable": true },
+        { "abbr": "INTERN", "code": "IT304P", "name": "Project Internship", "credits": 1, "type": "Practical" }
+      ],
+      "schedule": {
+        "Monday": [
+          { "periods": ["1", "2"], "course": "PE" }, { "periods": ["3"], "course": "SE" }, { "periods": ["4"], "course": "ADBMS" },
+          { "periods": ["5"], "course": "TOC" }, { "periods": ["6"], "course": "DL&GA" }
+        ],
+        "Tuesday": [
+          { "periods": ["1"], "course": "SE" }, { "periods": ["2"], "course": "DL&GA" }, { "periods": ["3", "4"], "course": "PE" },
+          { "periods": ["5"], "course": "ADBMS" }, { "periods": ["6"], "course": "SSFE" }
+        ],
+        "Wednesday": [
+          { "periods": ["1", "2"], "course": "PE" }, { "periods": ["3"], "course": "DL&GA" },
+          { "periods": ["4"], "course": "SE" }, { "periods": ["5"], "course": "ADBMS" }
+        ],
+        "Thursday": [
+          { "periods": ["1", "2"], "course": "SE-LAB" }, { "periods": ["3"], "course": "TOC" }, { "periods": ["4", "5"], "course": "ADBMS" },
+          { "periods": ["6"], "course": "SSFE" }, { "periods": ["7", "8"], "course": "PSL" }
+        ],
+        "Friday": [
+          { "periods": ["1", "2"], "course": "PSL" }, { "periods": ["3"], "course": "TOC" },
+          { "periods": ["4", "5"], "course": "APT" }, { "periods": ["6", "7"], "course": "DL&GA" }
+        ]
+      }
+    },
+    "academic_calendar": {
+      "events": [
+        { "cat": "Academic Activities", "event": "Load Distribution", "date": "10 Jul 2026" },
+        { "cat": "Academic Activities", "event": "Finalization of Course Coordinators", "date": "20 Jul 2026" },
+        { "cat": "Academic Activities", "event": "Uploading Lesson Plan on ERP", "date": "25 Jul 2026" },
+        { "cat": "Academic Activities", "event": "BOS wise Meeting", "start": "25 Jul 2026", "end": "30 Jul 2026" },
+        { "cat": "Holidays", "event": "First Saturday", "date": "01 Aug 2026" },
+        { "cat": "Academic Activities", "event": "Registration and Commencement of Classes", "date": "03 Aug 2026" },
+        { "cat": "Academic Activities", "event": "Orientation of Students", "start": "03 Aug 2026", "end": "06 Aug 2026" },
+        { "cat": "Holidays", "event": "Third Saturday / Independence Day", "date": "15 Aug 2026" },
+        { "cat": "Additional Activities", "event": "Finalization of Class Representatives", "date": "22 Aug 2026" },
+        { "cat": "Holidays", "event": "EID-E-Milad", "date": "26 Aug 2026" },
+        { "cat": "Holidays", "event": "Rakshabandhan", "date": "28 Aug 2026" },
+        { "cat": "Academic Activities", "event": "Departmental CR Meeting 1", "start": "01 Sep 2026", "end": "03 Sep 2026" },
+        { "cat": "Holidays", "event": "Janamashtami", "date": "04 Sep 2026" },
+        { "cat": "Additional Activities", "event": "Teacher's Day", "date": "05 Sep 2026" },
+        { "cat": "Holidays", "event": "First Saturday", "date": "05 Sep 2026" },
+        { "cat": "Academic Activities", "event": "Internship Presentations", "start": "07 Sep 2026", "end": "12 Sep 2026" },
+        { "cat": "Academic Activities", "event": "Attendance Display to the students at Department Level", "date": "12 Sep 2026" },
+        { "cat": "Academic Activities", "event": "Mid-Sem Feedback at Central Level", "start": "14 Sep 2026", "end": "18 Sep 2026" },
+        { "cat": "Examination Activities", "event": "Uploading of Continuous Assessment (CA1) on ERP", "start": "14 Sep 2026", "end": "18 Sep 2026" },
+        { "cat": "Additional Activities", "event": "Engineer's Day", "date": "15 Sep 2026" },
+        { "cat": "Examination Activities", "event": "Detention List Publication (CT) by COE", "date": "18 Sep 2026" },
+        { "cat": "Holidays", "event": "Third Saturday", "date": "19 Sep 2026" },
+        { "cat": "Academic Activities", "event": "IQAC Academic Audit 1", "start": "21 Sep 2026", "end": "26 Sep 2026" },
+        { "cat": "Examination Activities", "event": "MSE1 Examination Central Level", "start": "21 Sep 2026", "end": "26 Sep 2026" },
+        { "cat": "Examination Activities", "event": "Evaluation of Answer Sheets (MSE1)", "start": "01 Oct 2026", "end": "05 Oct 2026" },
+        { "cat": "Examination Activities", "event": "Grievance Redressal (MSE1)", "start": "01 Oct 2026", "end": "08 Oct 2026" },
+        { "cat": "Examination Activities", "event": "Marks Uploading on ERP (MSE1)", "start": "01 Oct 2026", "end": "10 Oct 2026" },
+        { "cat": "Holidays", "event": "Mahatma Gandhi Jayanti", "date": "02 Oct 2026" },
+        { "cat": "Holidays", "event": "First Saturday", "date": "03 Oct 2026" },
+        { "cat": "Additional Activities", "event": "Ideatex", "start": "09 Oct 2026", "end": "10 Oct 2026" },
+        { "cat": "Additional Activities", "event": "Departmental Project Exhibition", "start": "10 Oct 2026", "end": "24 Oct 2026" },
+        { "cat": "Academic Activities", "event": "Mid Semester Result analysis at Department Level", "start": "12 Oct 2026", "end": "16 Oct 2026" },
+        { "cat": "Additional Activities", "event": "CR Meeting Institute Level", "start": "12 Oct 2026", "end": "16 Oct 2026" },
+        { "cat": "Holidays", "event": "Third Saturday", "date": "17 Oct 2026" },
+        { "cat": "Holidays", "event": "Dussehra", "date": "20 Oct 2026" },
+        { "cat": "Academic Activities", "event": "Departmental CR Meeting 2", "start": "26 Oct 2026", "end": "29 Oct 2026" },
+        { "cat": "Academic Activities", "event": "Attendance Display to the Students at Department Level", "date": "31 Oct 2026" },
+        { "cat": "Additional Activities", "event": "INNOTECH 2026", "date": "31 Oct 2026" },
+        { "cat": "Examination Activities", "event": "Grievance Redressal (MSE2)", "start": "01 Nov 2026", "end": "30 Nov 2026" },
+        { "cat": "Examination Activities", "event": "Uploading of Continuous Assessment (CA2) on ERP", "start": "02 Nov 2026", "end": "06 Nov 2026" },
+        { "cat": "Holidays", "event": "First Saturday", "date": "07 Nov 2026" },
+        { "cat": "Holidays", "event": "Deepawali Break", "start": "08 Nov 2026", "end": "11 Nov 2026" },
+        { "cat": "Examination Activities", "event": "Detention List Publication (MSE2) by COE", "date": "14 Nov 2026" },
+        { "cat": "Examination Activities", "event": "Mid Sem Examination (MSE2-Pen Paper Exam)", "start": "16 Nov 2026", "end": "19 Nov 2026" },
+        { "cat": "Examination Activities", "event": "Mid Sem Examination (MSE2-Activity Based Exams)", "start": "20 Nov 2026", "end": "27 Nov 2026" },
+        { "cat": "Holidays", "event": "Third Saturday", "date": "21 Nov 2026" },
+        { "cat": "Additional Activities", "event": "Student Faculty Feedback", "start": "23 Nov 2026", "end": "04 Dec 2026" },
+        { "cat": "Additional Activities", "event": "Curriculum Feedback by all Stakeholders", "start": "23 Nov 2026", "end": "04 Dec 2026" },
+        { "cat": "Holidays", "event": "Guru Nanak Jayanti / Ganga Snan", "date": "24 Nov 2026" },
+        { "cat": "Examination Activities", "event": "Evaluation of Answer Sheets (MSE2-Pen Paper Exam)", "date": "27 Nov 2026" },
+        { "cat": "Examination Activities", "event": "Marks Uploading on ERP (MSE2)", "start": "01 Dec 2026", "end": "02 Dec 2026" },
+        { "cat": "Holidays", "event": "First Saturday", "date": "05 Dec 2026" },
+        { "cat": "Academic Activities", "event": "Last Instructional Day", "date": "07 Dec 2026" },
+        { "cat": "Examination Activities", "event": "Make-up Examination (Central Level)", "start": "08 Dec 2026", "end": "11 Dec 2026" },
+        { "cat": "Examination Activities", "event": "Detention List Publication (ESE) by COE", "date": "09 Dec 2026" },
+        { "cat": "Examination Activities", "event": "End Semester Examination (ESE)", "start": "14 Dec 2026", "end": "28 Dec 2026" },
+        { "cat": "Holidays", "event": "Third Saturday", "date": "19 Dec 2026" },
+        { "cat": "Holidays", "event": "Christmas Day", "date": "25 Dec 2026" },
+        { "cat": "Examination Activities", "event": "End Semester Practical Examination", "start": "26 Dec 2026", "end": "02 Jan 2027" },
+        { "cat": "Academic Activities", "event": "Answer Script (ESE) showing to the students", "date": "07 Jan 2027" },
+        { "cat": "Academic Activities", "event": "IQAC Academic Audit 2", "start": "11 Jan 2027", "end": "15 Jan 2027" },
+        { "cat": "Examination Activities", "event": "Result Publication by COE", "date": "16 Jan 2027" },
+        { "cat": "Academic Activities", "event": "New Semester Beginning", "date": "18 Jan 2027" }
+      ]
+    }
+  }
+}
