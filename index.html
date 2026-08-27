@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Today · CampusFlow</title>
+  <meta name="description" content="CampusFlow — live timetable, academic calendar and course hub.">
+
+  <meta name="theme-color" content="#16233b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CampusFlow">
+
+  <link id="manifestLink" rel="manifest" href="#">
+  <link id="favLink" rel="icon" href="./icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg style="display:none" aria-hidden="true"><symbol id="logo-glyph" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="#16233b" /><g fill="#f0a41c"><rect x="14" y="15" width="10" height="10" rx="3" /><rect x="27" y="15" width="10" height="10" rx="3" opacity=".4" /><rect x="40" y="15" width="10" height="10" rx="3" /><rect x="14" y="28" width="23" height="10" rx="3" /><rect x="40" y="28" width="10" height="10" rx="3" opacity=".4" /><rect x="14" y="41" width="10" height="10" rx="3" opacity=".4" /><rect x="27" y="41" width="23" height="10" rx="3" /></g></symbol></svg>
+<div id="splash" aria-hidden="true">
+<div class="sp-inner">
+<svg class="sp-logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#logo-glyph" /><circle cx="32" cy="32" r="30.5" fill="none" stroke="rgba(240,164,28,.35)" stroke-width="1.5" /></svg>
+<div class="sp-name">CampusFlow</div>
+<div class="sp-sub" id="spSub">Loading...</div>
+<div class="sp-dots"><i></i><i></i><i></i></div>
+</div>
+</div>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+<aside class="sidebar" aria-label="Primary">
+<div class="brand">
+<svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><use href="#logo-glyph" /></svg>
+<div>CampusFlow<small id="brandSub"></small></div>
+</div>
+<button class="side-toggle" id="sideToggle" aria-label="Collapse sidebar" title="Collapse sidebar ( [ )">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+</button>
+<nav class="side-nav" id="sideNav"></nav>
+<div class="side-foot">
+<div class="side-card" id="sideRing"></div>
+<button class="install-btn" id="installBtn" hidden>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" /></svg>
+<span class="nav-lb">Install app</span>
+</button>
+</div>
+</aside>
+<div class="main">
+<main class="content" id="main">
+<section class="view" id="view-today" aria-label="Today"></section>
+<section class="view" id="view-timetable" aria-label="Timetable"></section>
+<section class="view" id="view-calendar" aria-label="Academic calendar"></section>
+<section class="view" id="view-courses" aria-label="Courses"></section>
+</main>
+</div>
+</div>
+
+<nav class="bottombar" id="bottomNav" aria-label="Primary"></nav>
+<button class="fab" id="searchBtn" aria-label="Search courses, events, rooms">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+</button>
+
+<div class="ov" id="ov" hidden><div class="modal" id="modalBox" role="dialog" aria-modal="true"></div></div>
+<div class="pal" id="palOv" hidden>
+<div class="pal-box" role="dialog" aria-modal="true" aria-label="Search">
+<div class="pal-in">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+<input id="palInput" type="text" placeholder="Search courses, events, faculty, rooms…" autocomplete="off">
+</div>
+<div class="pal-list" id="palList"></div>
+<div class="pal-foot"><span>↑↓ navigate</span><span>↵ open</span><span>esc close</span></div>
+</div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+'use strict';
+
+fetch('bundle.json')
+  .then(res => {
+    if (!res.ok) throw new Error('Network response was not ok');
+    return res.json();
+  })
+  .then(bundle => {
+    const DATA = bundle.data;
+    const MANIFEST_CONFIG = bundle.manifestConfig;
+
+    // ====== APP INITIALIZATION ======
+    const $ = (s, c = document) => c.querySelector(s);
+    const $$ = (s, c = document) => c.querySelectorAll(s);
+    const pad = n => String(n).padStart(2, '0');
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','"':'&quot;'}[c]));
+    const day0 = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffDays = (a, b) => Math.round((Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()) - Date.UTC(b.getFullYear(), b.getMonth(), b.getDate())) / 864e5);
+    const mer = m => m < 720 ? 'am' : 'pm';
+    const h12 = m => `${Math.floor(m / 60) % 12 || 12}:${pad(m % 60)}`;
+    const fmtMin = (m, compact) => `${h12(m)}${compact ? (m < 720 ? 'a' : 'p') : ' ' + mer(m)}`;
+    const fmtRange = (a, b) => mer(a) === mer(b) ? `${h12(a)}–${h12(b)} ${mer(b)}` : `${h12(a)} ${mer(a)} – ${h12(b)} ${mer(b)}`;
+    const fmtDur = min => {
+      min = Math.max(0, Math.round(min));
+      const h = Math.floor(min / 60), m = min % 60;
+      return h ? `${h}h ${pad(m)}m` : `${m}m`;
+    };
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const MON3 = MONTHS.map(m => m.slice(0, 3));
+    const MONTH_IDX = Object.fromEntries(MON3.map((m, i) => [m, i]));
+    const DOW = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const DOW3 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const DOW_SHORT = {Sunday:'Sun',Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+    const dow3 = d => DOW3[d.getDay()];
+    const pDate = s => { if (!s) return new Date(0); const [d, m, y] = s.trim().split(/\s+/); return new Date(+y, MONTH_IDX[m], +d); };
+    const dk = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    const sameDay = (a, b) => a.toDateString() === b.toDateString();
+    const fmtDay = d => `${pad(d.getDate())} ${MON3[d.getMonth()]}`;
+    const fmtDayW = d => `${dow3(d)}, ${fmtDay(d)}`;
+    const fmtDayFull = d => `${fmtDayW(d)} ${d.getFullYear()}`;
+    const fmtFullDate = d => `${DOW[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}${d.getHours() || d.getMinutes() ? ' · ' + fmtMin(d.getHours() * 60 + d.getMinutes()) : ''}`;
+    const currentMins = (now = new Date()) => now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+    const pctOf = (s, mins) => (s && s.end > s.start) ? clamp(Math.floor((mins - s.start) / (s.end - s.start) * 100), 0, 99) : 0;
+    const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const META = DATA.meta || {};
+    const SEM_LABEL = `${META.semester || 'Odd'} Semester ${META.year || '2026-27'}`;
+    const CLASS_START = pDate(META.semStart || '03 Aug 2026');
+    const LAST_DAY = pDate(META.semEnd || '07 Dec 2026');
+    const RADAR_S = pDate(META.radarStart || '01 Jul 2026');
+    const RADAR_E = pDate(META.radarEnd || '31 Jan 2027');
+    const DEFAULT_ROOM = META.defaultRoom || 'E-306';
+    const WORKING_SATS = META.workingSats || [2, 4];
+
+    const CAT = {
+      'Academic Activities':    { short: 'Academic', cls: 'academic',    col: 'var(--academic)',   bg: 'var(--theory-bg)' },
+      'Examination Activities': { short: 'Exams',    cls: 'examination', col: 'var(--exam)',       bg: 'var(--exam-bg)' },
+      'Exam Operations':        { short: 'Exam Ops', cls: 'examops',     col: 'var(--examops)',    bg: 'var(--examops-bg)' },
+      'Holidays':               { short: 'Holidays', cls: 'holidays',    col: 'var(--holiday)',    bg: 'var(--holiday-bg)' },
+      'Additional Activities':  { short: 'Extra',    cls: 'additional',  col: 'var(--additional)', bg: 'var(--accent-soft)' },
+    };
+    const CATS = Object.keys(CAT);
+    const CAT_ORDER = ['Holidays', 'Examination Activities', 'Exam Operations', 'Academic Activities', 'Additional Activities'];
+    const TYPE_INFO = {
+      Theory:    { cls: 'theory',    var: 'var(--theory)',    fill: 'rgba(58,110,165,.28)' },
+      Practical: { cls: 'practical', var: 'var(--practical)', fill: 'rgba(31,122,109,.28)' },
+      Blended:   { cls: 'blended',   var: 'var(--blended)',   fill: 'rgba(123,82,174,.28)' },
+    };
+    const TYPES = Object.keys(TYPE_INFO);
+    const typeInfo = t => TYPE_INFO[t] || TYPE_INFO.Theory;
+
+    const ICONS = {
+      clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>', pin: '<path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+      cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>', bolt: '<path d="M13 2L4 14h6l-1 8 9-12h-6z"/>',
+      note: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9L17 7M6.3 17.7l-1.4 1.4"/>',
+      check: '<circle cx="12" cy="12" r="9"/><path d="M8.5 12.4l2.4 2.4 4.8-4.8"/>', list: '<path d="M8.5 6h12M8.5 12h12M8.5 18h12"/><path d="M3.5 6h.5M3.5 12h.5M3.5 18h.5"/>',
+      chart: '<path d="M3 20h18"/><path d="M6 20v-7M11 20V5M16 20v-10"/>', pulse: '<path d="M2 12h4l3-8 4 16 3-8h6"/>',
+      utens: '<path d="M4 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M20 15V2a5 5 0 0 0-4 5v6a2 2 0 0 0 2 2h2z"/><path d="M20 15v7"/>',
+      spark: '<path d="M12 3l2 5.4 5.5 1.6-5.5 2-2 5.4-2-5.4-5.5-2L10 8.4z"/><path d="M19 16l.8 2.2L22 19"/>',
+      dl: '<path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/>', chev: '<path d="M9 6l6 6-6 6"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>',
+      today: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>',
+      timetable: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 4v17M15 9v12"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M8 17h6"/>',
+      courses: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M9 8h7"/>',
+      more: '<path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h13M20 17h.5"/><circle cx="16" cy="7" r="2"/><circle cx="9.5" cy="12" r="2"/><circle cx="18.5" cy="17" r="2"/>',
+    };
+    const svg = (n, attrs) => `<svg ${attrs} aria-hidden="true">${ICONS[n] || ''}</svg>`;
+    const I = (n, s = 14, nav = false) => svg(n, `${nav ? '' : `width="${s}" height="${s}" `}viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"`);
+    const navSVG = n => I(n, 0, true);
+    const a = (act, val = '') => `data-a="${act}"${val ? ` data-v="${esc(val)}"` : ''}`;
+    const btn = (html, act, val = '', cls = 'btn', attrs = '') => `<button class="${cls}" ${a(act, val)} ${attrs}>${html}</button>`;
+    const cardH = (ic, title, extra = '') => `<div class="card-h">${I(ic)} ${title}${extra}</div>`;
+    const modalHead = (mc, inner) => `<div class="modal-h"${mc ? ` style="--mc:${mc}"` : ''}><div>${inner}</div>${btn(I('x', 18), 'close', '', 'iconbtn x', 'aria-label="Close"')}</div>`;
+    const count = (html, cls = '') => `<span class="count ${cls}">${html}</span>`;
+    const toggleSet = (set, val) => set.has(val) ? set.delete(val) : set.add(val);
+
+    // Cache frequently accessed DOM elements
+    const DOM = {
+      modal: $('#modalBox'), ov: $('#ov'), pal: $('#palOv'), palIn: $('#palInput'), palList: $('#palList'),
+      toast: $('#toast'), splash: $('#splash'), sideNav: $('#sideNav'), bottomNav: $('#bottomNav'),
+      sideRing: $('#sideRing'), sideToggle: $('#sideToggle'), installBtn: $('#installBtn'), searchBtn: $('#searchBtn'),
+      views: { today: $('#view-today'), timetable: $('#view-timetable'), calendar: $('#view-calendar'), courses: $('#view-courses') },
+    };
+
+    const P_START = (() => { const [h, m] = DATA.timetable.periods.start.split(':').map(Number); return h * 60 + m; })();
+    const PERIODS = (() => {
+      let t = P_START;
+      return DATA.timetable.periods.durations.map((dur, i) => {
+        const label = DATA.timetable.periods.labels[i];
+        const p = { label, dur, start: t, end: t + dur, lunch: label === 'lunch' };
+        t += dur; return p;
+      });
+    })();
+    const P_BY_LABEL = Object.fromEntries(PERIODS.map(p => [p.label, p]));
+    const LAST_END = PERIODS.at(-1).end;
+    const LUNCH = P_BY_LABEL.lunch || { start: Infinity, end: Infinity, label: 'lunch', dur: 0 };
+    const norm = s => String(s).replace(/\s+/g, '');
+    const COURSES = Object.fromEntries(DATA.timetable.courses.map(c => {
+      const key = norm(c.abbr || c.code);
+      return [key, { ...c, key, meet: [], room: c.room }];
+    }));
+    const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+    const SESSIONS = Object.fromEntries(DAYS.map(day => {
+      const sessions = (DATA.timetable.schedule[day] || []).map(e => {
+        const first = P_BY_LABEL[e.periods[0]], last = P_BY_LABEL[e.periods.at(-1)];
+        return { day, periods: e.periods, start: first.start, end: last.end, course: COURSES[norm(e.course)], span: e.periods.length };
+      }).sort((a, b) => a.start - b.start);
+      sessions.forEach(s => s.course?.meet.push({ day, periods: s.periods, start: s.start, end: s.end }));
+      return [day, sessions];
+    }));
+    Object.values(COURSES).forEach(c => { if (!c.room && c.meet.length && !c.editable) c.room = DEFAULT_ROOM; });
+    const isExamOps = e => e.cat === 'Examination Activities' && /Evaluation|Grievance|Uploading|Detention|Result Publication/i.test(e.event);
+    const EVENTS = DATA.academic_calendar.events.map((e, i) => {
+      const s = pDate(e.date || e.start), en = pDate(e.date || e.end);
+      return { ...e, cat: isExamOps(e) ? 'Exam Operations' : e.cat, i, s, en, sk: dk(s), ek: dk(en) };
+    }).sort((a, b) => a.s - b.s || a.en - b.en);
+    const dateRange = (s, en) => { const r = []; for (let d = new Date(s); d <= en; d.setDate(d.getDate() + 1)) r.push(dk(d)); return r; };
+    const HOLIDAYS = new Set(EVENTS.filter(e => e.cat === 'Holidays').flatMap(e => dateRange(e.s, e.en)));
+    const EXAMDAYS = new Set(EVENTS.filter(e => e.cat === 'Examination Activities').flatMap(e => dateRange(e.s, e.en)));
+    const EVENTS_BY_DATE = {};
+    EVENTS.forEach(e => {
+      let d = new Date(e.s);
+      while (d <= e.en) {
+        (EVENTS_BY_DATE[dk(d)] ||= []).push(e);
+        d.setDate(d.getDate() + 1);
+      }
+    });
+    const SPAN_SLOT = (() => {
+      const end = [-Infinity, -Infinity], map = {};
+      EVENTS.filter(e => e.en > e.s && e.cat !== 'Examination Activities').forEach(e => {
+        const slot = end[0] < e.s ? 0 : end[1] < e.s ? 1 : (end[0] <= end[1] ? 0 : 1);
+        map[e.i] = slot; end[slot] = e.en;
+      });
+      return map;
+    })();
+    const isWorkingSat = d => d.getDay() === 6 && WORKING_SATS.includes(Math.ceil(d.getDate() / 7));
+    const isAcademicDay = d => d.getDay() !== 0 && !HOLIDAYS.has(dk(d)) && (d.getDay() !== 6 || isWorkingSat(d));
+    const OV = Object.fromEntries((DATA.dayOverrides || []).map(o => [dk(pDate(o.date)), { ...o, d: pDate(o.date) }]));
+    const ovOn = d => OV[dk(d)];
+    const ovLabel = o => o.status === 'working' ? `Teaching day · ${DOW_SHORT[o.follows] || o.follows} timetable` : 'University closed';
+    const sessionsForDate = d => {
+      const o = ovOn(d);
+      return o?.status === 'closed' ? [] : SESSIONS[o?.status === 'working' ? o.follows : DOW[d.getDay()]] || [];
+    };
+    const isTeachingDay = d => { const o = ovOn(d); return o ? o.status === 'working' : isAcademicDay(d); };
+    const ACADEMIC_DAYS = [];
+    for (let d = new Date(CLASS_START); d <= LAST_DAY; d.setDate(d.getDate() + 1)) { if (isAcademicDay(d)) ACADEMIC_DAYS.push(new Date(d)); }
+    const SEM_TOTAL = ACADEMIC_DAYS.length || 90;
+    const SEM_WEEKS = Math.ceil(SEM_TOTAL / 5);
+
+    const getInitialPE = () => {
+      try {
+        const raw = JSON.parse(localStorage.getItem('cf-pe') || 'null');
+        if (!raw) return {};
+        if (raw.name !== undefined || raw.faculty !== undefined || raw.room !== undefined) {
+          return { PE: raw };
+        }
+        return raw;
+      } catch (_) {
+        return {};
+      }
+    };
+
+    const state = {
+      tab: 'today',
+      pe: getInitialPE(),
+      calMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      calSel: dk(new Date()), calFilters: new Set(CATS), ttTypes: new Set(TYPES),
+      ttDay: (() => { const d = DOW[new Date().getDay()]; return DAYS.includes(d) ? d : 'Monday'; })(),
+      courseFilter: 'All', palIdx: 0, palResults: [],
+    };
+    let deferredPrompt = null;
+    function applyEditable() {
+      Object.values(COURSES).forEach(c => {
+        if (!c.editable || !state.pe[c.key]) return;
+        ['room', 'faculty', 'name'].forEach(k => {
+          const v = state.pe[c.key][k]?.trim();
+          if (v) c[k] = v; else if (k === 'room') delete c.room;
+        });
+      });
+    }
+    applyEditable();
+
+    const GLYPH_RECTS = [[14,15,10,10,1],[27,15,10,10,.4],[40,15,10,10,1],[14,28,23,10,1],[40,28,10,10,.4],[14,41,10,10,.4],[27,41,23,10,1]];
+    function drawGlyph(ctx, f, ox, oy) {
+      ctx.fillStyle = '#f0a41c';
+      GLYPH_RECTS.forEach(([x, y, w, h, a]) => {
+        ctx.globalAlpha = a;
+        const X = ox + x * f, Y = oy + y * f, W = w * f, H = h * f, R = 3 * f;
+        ctx.roundRect ? (ctx.beginPath(), ctx.roundRect(X, Y, W, H, R), ctx.fill()) : ctx.fillRect(X, Y, W, H);
+      });
+      ctx.globalAlpha = 1;
+    }
+    const favLink = $('#favLink');
+    let lastFavKey = '';
+    function paintFavicon(pct) {
+      const key = pct == null ? 'logo' : `p${pct.toFixed(2)}`;
+      if (key === lastFavKey) return;
+      lastFavKey = key;
+      try {
+        const c = document.createElement('canvas'); c.width = c.height = 64;
+        const ctx = c.getContext('2d');
+        ctx.beginPath(); ctx.arc(32, 32, 32, 0, Math.PI * 2); ctx.fillStyle = '#16233b'; ctx.fill();
+        if (pct == null) drawGlyph(ctx, 1, 0, 0);
+        else {
+          ctx.save(); ctx.globalAlpha = .45; drawGlyph(ctx, 1, 0, 0); ctx.restore();
+          ctx.beginPath(); ctx.arc(32, 32, 29, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(pct, 0, 1));
+          ctx.strokeStyle = '#f0a41c'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.stroke();
+        }
+        favLink.href = c.toDataURL('image/png');
+      } catch (_) {}
+    }
+    const paintLiveFavicon = () => { const st = getStatus(); paintFavicon(st.current ? pctOf(st.current, st.mins) : null); };
+    const iconPNG = (size, maskable) => {
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const x = c.getContext('2d');
+      if (maskable) { x.fillStyle = '#16233b'; x.fillRect(0, 0, size, size); drawGlyph(x, size * .52 / 64, size * .24, size * .24); }
+      else { x.beginPath(); x.arc(size / 2, size / 2, size * 0.48, 0, Math.PI * 2); x.fillStyle = '#16233b'; x.fill(); drawGlyph(x, size * 0.85 / 64, size * 0.075, size * 0.075); }
+      return c.toDataURL('image/png');
+    };
+    
+    (() => {
+      const apple = document.createElement('link');
+      apple.rel = 'apple-touch-icon'; apple.href = iconPNG(180, false);
+      document.head.appendChild(apple);
+      
+      const manifest = {
+        name: MANIFEST_CONFIG.name || 'CampusFlow',
+        short_name: MANIFEST_CONFIG.short_name || 'CampusFlow',
+        description: MANIFEST_CONFIG.description || `Live timetable, academic calendar and course hub — ${SEM_LABEL}.`,
+        start_url: MANIFEST_CONFIG.start_url || './',
+        scope: MANIFEST_CONFIG.scope || './',
+        display: MANIFEST_CONFIG.display || 'standalone',
+        orientation: MANIFEST_CONFIG.orientation || 'any',
+        background_color: MANIFEST_CONFIG.background_color || '#0c1220',
+        theme_color: MANIFEST_CONFIG.theme_color || '#16233b',
+        icons: [
+          { src: iconPNG(192, false), sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: iconPNG(512, false), sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: iconPNG(512, true),  sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      };
+      try { $('#manifestLink').href = `data:application/manifest+json;base64,${btoa(unescape(encodeURIComponent(JSON.stringify(manifest))))}`; } catch (_) {}
+      
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+          
+          // 1. Detect when a new SW is installing
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            
+            newWorker.addEventListener('statechange', () => {
+              // 2. When it's installed and waiting, show the toast
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                const t = $('#toast');
+                if (t) {
+                  t.innerHTML = '🚀 <b>New version ready!</b> Tap to update.';
+                  t.style.cursor = 'pointer';
+                  
+                  // 3. On click, tell the SW to skip waiting, then reload
+                  t.onclick = () => {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    location.reload();
+                  };
+                  
+                  t.classList.add('show');
+                  // Auto-hide after 8 seconds if they don't click
+                  setTimeout(() => t.classList.remove('show'), 8000);
+                }
+              }
+            });
+          });
+
+          // 4. Listen for the SW taking control (reload to apply new cache)
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+          });
+
+        }).catch(err => console.warn('SW registration failed:', err));
+      }
+      
+      if (isStandalone()) { deferredPrompt = null; $('#installBtn').hidden = true; }
+    })();
+
+    function showInstallBanner(o) {
+      if ($('#mobileInstallBanner')) return;
+      const b = document.createElement('div');
+      b.id = 'mobileInstallBanner';
+      b.className = `card mib${o.warm ? ' warm' : ''}${o.install ? ' stack' : ''}`;
+      b.innerHTML = `<div class="mib-top"><span class="mib-ic" style="background:${o.icBg};color:${o.icCol}">${I('dl', 20)}</span><div class="mib-txt"><b>${o.title}</b><small>${o.sub}</small></div>${btn(I('x', 16), 'mib-close', '', 'iconbtn', 'aria-label="Dismiss install prompt"')}</div>${o.install ? `<div class="mib-cta">${btn(`${I('dl', 15)} Install`, 'install', '', 'btn primary')}</div>` : ''}`;
+      b.addEventListener('click', e => { if (!e.target.closest('[data-a]') && o.install) doInstall(); });
+      $('.content').prepend(b);
+    }
+    function injectMobileInstallBanner() {
+      if (deferredPrompt && !isStandalone() && window.innerWidth < 920)
+        showInstallBanner({ warm: 1, install: 1, icBg: 'var(--accent)', icCol: '#241a00', title: 'Install CampusFlow', sub: 'Add to home screen for quick access.' });
+    }
+    setTimeout(() => {
+      if (!isStandalone() && IS_IOS && !deferredPrompt && window.innerWidth < 920)
+        showInstallBanner({ icBg: 'var(--surface2)', icCol: 'var(--ink2)', title: 'Add to Home Screen', sub: 'Tap <b>Share (⬆️)</b> then <b>"Add to Home Screen"</b> to install.' });
+    }, 3000);
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault(); deferredPrompt = e;
+      if (isStandalone()) return;
+      $('#installBtn').hidden = false; injectMobileInstallBanner();
+    });
+    window.addEventListener('appinstalled', () => { deferredPrompt = null; $('#installBtn').hidden = true; $('#mobileInstallBanner')?.remove(); });
+    async function doInstall() {
+      if (!deferredPrompt) { toast(IS_IOS ? 'iOS: Tap Share (⬆️) then "Add to Home Screen".' : 'Use browser menu → "Add to Home screen" or "Install app".'); return; }
+      const p = deferredPrompt; deferredPrompt = null;
+      try { p.prompt(); if ((await p.userChoice).outcome !== 'accepted') toast('Install dismissed.'); } catch (_) { toast('Install blocked — use browser menu.'); }
+      $('#installBtn').hidden = true; $('#mobileInstallBanner')?.remove();
+    }
+    $('#installBtn')?.addEventListener('click', doInstall);
+
+    let toastT = null;
+    function toast(msg, ms = 2600) {
+      const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms);
+    }
+    function countdown(date, now = new Date()) {
+      const d = diffDays(date, now);
+      if (d < 0) return count('past');
+      if (d === 0) return count('today', 'hot');
+      return count(`${I('clock', 11)}${d === 1 ? '1 day' : d + ' days'}`, d <= 7 ? 'warm' : '');
+    }
+    function getUpdateText(dateStr) {
+      if (!dateStr) return null;
+      const u = new Date(dateStr), diff = diffDays(new Date(), u);
+      if (diff < 0 || diff > 14) return `Updated on ${fmtDayFull(u)}`;
+      if (diff === 0) return 'Updated today';
+      if (diff === 1) return 'Updated yesterday';
+      return `Updated ${diff} days ago`;
+    }
+    const spec = (k, v) => `<div class="spec"><small>${k}</small><b>${v}</b></div>`;
+    function ringSVG(pct, size = 54) {
+      const r = size / 2 - 5, c = 2 * Math.PI * r;
+      return `<svg class="ring" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle class="bg" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="5"/><circle class="fg" cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke-width="5" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - clamp(pct, 0, 1))).toFixed(1)}"/></svg>`;
+    }
+    const covers = (e, d) => { const k = typeof d === 'string' ? d : dk(d); return e.sk <= k && k <= e.ek; };
+    const eventsOn = d => EVENTS_BY_DATE[typeof d === 'string' ? d : dk(d)] || [];
+    const holidaysOn = d => eventsOn(d).filter(e => e.cat === 'Holidays');
+    function getStatus(now = new Date()) {
+      const mins = currentMins(now), override = ovOn(now);
+      const eff_day = override?.status === 'working' ? override.follows : DOW[now.getDay()];
+      const sessions = sessionsForDate(now);
+      const current = sessions.find(s => mins >= s.start && mins < s.end) || null;
+      const next = sessions.find(s => s.start > mins) || null;
+      const holidays = holidaysOn(now);
+      return { mins, eff_day, sessions, current, next, override, holidays, dayName: DOW[now.getDay()], isLunch: !current && mins >= LUNCH.start && mins < LUNCH.end, off: override ? override.status === 'closed' : (holidays.length > 0 || now.getDay() === 0 || now.getDay() === 6) };
+    }
+    function nextClassAny(now) {
+      for (let i = 0; i < 10; i++) {
+        const d = addDays(now, i);
+        if (!isTeachingDay(d)) continue;
+        const ss = sessionsForDate(d); if (!ss.length) continue;
+        if (i === 0) { const s = ss.find(x => x.start > currentMins(now)); if (s) return { s, d }; } else return { s: ss[0], d };
+      }
+      return null;
+    }
+    const pLabOf = s => `P${s.periods[0]}${s.span > 1 ? `–${s.periods.at(-1)}` : ''}`;
+    const DAY_MINS = Object.fromEntries(DAYS.map(d => [d, (SESSIONS[d] || []).reduce((a, s) => a + (s.end - s.start), 0)]));
+    const dayMinutes = day => DAY_MINS[day] || 0;
+    const MAX_DAY_MINS = Math.max(1, ...Object.values(DAY_MINS));
+    function dayInfo(now) {
+      const today = day0(now);
+      let idx = 0;
+      for (let i = 0; i < ACADEMIC_DAYS.length; i++) {
+        if (ACADEMIC_DAYS[i] <= today) idx = i + 1; else break;
+      }
+      return { idx, total: SEM_TOTAL, week: idx ? clamp(Math.floor(diffDays(now, CLASS_START) / 7) + 1, 1, SEM_WEEKS) : 0 };
+    }
+    function tlTimes(pLab, s, e) {
+      const same = mer(s) === mer(e);
+      return `<span class="p">${pLab}</span>${h12(s)}${same ? '' : ' ' + mer(s)}<small>${h12(e)} ${mer(e)}</small>`;
+    }
+    function sessionListHTML(day, now, forToday) {
+      const ss = SESSIONS[day] || [];
+      if (!ss.length) return '<div class="empty">No classes scheduled.</div>';
+      const mins = currentMins(now);
+      const items = ss.map(s => ({ ...s, kind: 'cls' })).concat([{ kind: 'lunch', start: LUNCH.start, end: LUNCH.end }]).sort((a, b) => a.start - b.start);
+      let html = '<div class="tl">';
+      items.forEach(it => {
+        if (it.kind === 'lunch') {
+          const live = forToday && mins >= it.start && mins < it.end;
+          html += `<div class="tl-row${live ? ' live' : ''}"><div class="tl-time">${tlTimes('LUNCH', it.start, it.end)}</div><div class="tl-rail"><span class="tl-dot"></span></div><div class="tl-lunch">${I('utens', 13)} 60 min break</div></div>`; return;
+        }
+        const c = it.course || {}, st = forToday ? (mins >= it.end ? 'done' : (mins >= it.start ? 'live' : '')) : '', pct = st === 'live' ? pctOf(it, mins) : 0;
+        html += `<div class="tl-row ${st}"><div class="tl-time">${tlTimes(pLabOf(it), it.start, it.end)}</div><div class="tl-rail"><span class="tl-dot"></span></div><div class="tl-card" ${a('course', c.key || '')} tabindex="0" role="button" aria-label="${esc(c.name || '')} details"><span class="tag ${typeInfo(c.type).cls}">${c.type || ''}</span><b>${esc(c.abbr || c.name || '—')}</b>${c.room ? `<span class="room">${I('pin', 10)}${esc(c.room)}</span>` : ''}${st === 'live' ? count(pct + '%', 'hot') : ''}<span class="pm">${esc(c.name || '')}${c.faculty ? ' · ' + esc(c.faculty) : ''}</span></div></div>`;
+      });
+      html += '</div>';
+      const lastEnd = ss.at(-1).end;
+      html += lastEnd <= LUNCH.start ? `<div class="endnote good">${I('spark')} Free afternoon · day ends ${fmtMin(lastEnd)}</div>` : lastEnd < LAST_END ? `<div class="endnote">${I('clock')} Ends ${fmtMin(lastEnd)} · last period free</div>` : `<div class="endnote">${I('clock')} Full day · ends ${fmtMin(lastEnd)}</div>`;
+      return html;
+    }
+    const nextLineHTML = (s, k) => s ? `<div class="now-nextline"><span class="k">${k}</span><b>${esc(s.course?.abbr || s.course?.name || '—')}</b><span class="nm">${fmtMin(s.start)} · ${pLabOf(s)}${s.course?.room ? ' · ' + esc(s.course.room) : ''}</span></div>` : '';
+    function renderToday() {
+      const now = new Date(), st = getStatus(now), di = dayInfo(now);
+      const h = now.getHours();
+      const greet = h < 5 ? 'Burning the midnight oil' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      const sub = [fmtDayFull(now), ...(di.idx ? [`Day ${di.idx}/${di.total}`, `Wk ${di.week}`] : ['Off day'])].join(' · ');
+      let html = `<div class="greet-row"><h1>${greet}<span>.</span></h1><div class="greet-sub">${sub}</div></div>`;
+      if (META.updated) html += `<div class="data-updated">${I('clock', 11)} ${getUpdateText(META.updated)}</div>`;
+      if (st.off) {
+        const nc = nextClassAny(now);
+        const ncLabel = nc ? `${dow3(nc.d)} ${fmtMin(nc.s.start)} · ${esc(nc.s.course?.abbr || nc.s.course?.name || '')}` : '';
+        const title = st.override?.status === 'closed' ? 'University closed' : (st.holidays.length ? esc(st.holidays.map(e => e.event).join(' · ')) : 'Weekend');
+        html += `<div class="card nowcard"><div class="holiday-card"><div class="big">${I('sun', 32)}</div><div class="txt"><h3>${title}</h3><div class="now-meta">No classes today.${nc ? ' Next: <b>' + ncLabel + '</b>' : ''}</div></div>${btn(`${I('cal')} Calendar`, 'goto', 'calendar')}</div></div>`;
+      } else if (!st.sessions.length) {
+        html += `<div class="card"><div class="empty">No classes scheduled on ${st.dayName}s.</div></div>`;
+      } else {
+        if (st.override?.status === 'working') html += `<div class="endnote flush">${I('bolt')} ${ovLabel(st.override)}</div>`;
+        let cardHTML = '';
+        if (st.current) {
+          const c = st.current.course || {}, pct = pctOf(st.current, st.mins);
+          cardHTML = `<div class="now-fill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Class progress" style="width:${pct}%"></div><div class="now-main"><div class="now-top"><div class="now-kicker"><span class="livedot"></span> In session · ${pLabOf(st.current)}</div><div class="now-clock">ends ${fmtMin(st.current.end)}</div></div><div class="now-titlerow"><span class="now-title">${esc(c.abbr || c.name || '')}</span></div><div class="now-battrow"><span class="now-left">${fmtDur(st.current.end - st.mins)} left</span><span class="now-pct">${pct}%</span></div></div>`;
+          const after = st.sessions.find(s => s.start >= st.current.end);
+          cardHTML += `<div class="now-foot">${after ? nextLineHTML(after, 'Next') : '<div class="now-nextline"><span class="k">After this</span><b>Free afternoon</b><span class="nm">last session today</span></div>'}<div class="now-actions">${btn('Details', 'course', c.key || '', 'btn primary')}</div></div>`;
+        } else if (st.isLunch) {
+          const pct = pctOf(LUNCH, st.mins);
+          cardHTML = `<div class="now-fill cool" style="width:${pct}%"></div><div class="now-main"><div class="now-top"><div class="now-kicker">${I('utens')} Lunch break</div><div class="now-clock">${fmtRange(LUNCH.start, LUNCH.end)}</div></div><div class="now-titlerow"><span class="now-title">Back in ${fmtDur(LUNCH.end - st.mins)}</span></div><div class="now-battrow"><span class="note">${st.next ? `Resumes with ${esc(st.next.course?.abbr || st.next.course?.name || '')} at ${fmtMin(st.next.start)}` : 'No more classes today.'}</span><span class="now-pct">${pct}%</span></div></div>`;
+          if (st.next) cardHTML += `<div class="now-foot">${nextLineHTML(st.next, 'Up next')}<div class="now-actions">${btn('Details', 'course', st.next.course?.key || '', 'btn primary')}</div></div>`;
+        } else if (st.next) {
+          const n = st.next.course || {};
+          cardHTML = `<div class="now-main"><div class="now-top"><div class="now-kicker">${I('clock')} ${st.mins < P_START ? `Day starts ${fmtMin(P_START)}` : 'Free period'}</div><div class="now-clock">in ${fmtDur(st.next.start - st.mins)}</div></div><div class="now-titlerow"><span class="now-title">${esc(n.abbr || n.name || '')} · ${fmtMin(st.next.start)}</span><span class="tag ${typeInfo(n.type).cls}">${n.type || ''}</span>${n.room ? `<span class="room">${I('pin', 10)}${esc(n.room)}</span>` : ''}</div><div class="now-meta">${esc(n.name || '')}${n.code ? ' · ' + esc(n.code) : ''}${n.faculty ? ' · ' + esc(n.faculty) : ''}</div></div><div class="now-foot"><div class="now-nextline"><span class="k">Period</span><b>${pLabOf(st.next)}</b><span class="nm">${fmtRange(st.next.start, st.next.end)}</span></div><div class="now-actions">${btn('Details', 'course', n.key || '', 'btn primary')}${btn('Timetable', 'goto', 'timetable')}</div></div>`;
+        } else {
+          const last = st.sessions.at(-1);
+          cardHTML = `<div class="done-row"><span class="done-ic">${I('check', 20)}</span><div class="done-txt"><b>Done for today</b><small>${st.sessions.length}/${st.sessions.length} sessions · ended ${fmtMin(last.end)}</small></div>${btn('Upcoming', 'goto', 'calendar')}</div>`;
+        }
+        html += `<div class="card nowcard">${cardHTML}</div>`;
+      }
+      html += '<div class="grid-today" style="margin-top:16px"><div class="col">';
+      if (st.sessions.length && !st.off) {
+        const follows = st.override?.status === 'working' ? `<span class="count warm" style="margin-left:6px">follows ${esc(st.eff_day)}</span>` : '';
+        html += `<div class="card">${cardH('list', "TODAY'S CLASSES", follows + count(`${st.sessions.length} sessions · ${fmtDur(dayMinutes(st.eff_day))}`))}<div class="card-b tight">${sessionListHTML(st.eff_day, now, true)}</div></div>`;
+      }
+      html += `<div class="card stretch">${cardH('chart', 'WEEK LOAD', count(`≈ ${fmtDur(DAYS.reduce((a, d) => a + dayMinutes(d), 0))} contact`))}<div class="card-b grow">`;
+      DAYS.forEach(d => { html += `<div class="wk-row"><span class="mono">${DOW_SHORT[d]}</span><div class="wk-bar"><i style="width:${Math.round(dayMinutes(d) / MAX_DAY_MINS * 100)}%"></i></div><span class="mono">${fmtDur(dayMinutes(d))}</span></div>`; });
+      html += `</div></div></div><div class="col">`;
+      html += `<div class="card"><div class="card-b"><div class="ringwrap">${ringSVG(di.idx / SEM_TOTAL, 58)}<div><b class="num">${di.idx || '—'} / ${SEM_TOTAL}</b><div class="sub">days used</div></div>${count(Math.round(di.idx / SEM_TOTAL * 100) + '%')}</div></div></div>`;
+      const alerts = [], today0 = day0(now);
+      Object.values(OV).filter(o => o.d >= today0).sort((a, b) => a.d - b.d).slice(0, 2).forEach(o => {
+        const work = o.status === 'working';
+        alerts.push(`<button class="alert-row" ${a('ovopen', dk(o.d))}><span class="ic" style="background:${work ? 'var(--accent-soft)' : 'var(--holiday-bg)'};color:${work ? 'var(--accent-deep)' : 'var(--holiday)'}">${I('bolt', 14)}</span><span class="al-main"><b>${work ? `${esc(DOW_SHORT[o.follows] || o.follows)} timetable · ${fmtDay(o.d)}` : `Closed · ${fmtDay(o.d)}`}</b><small>${work ? 'Teaching day' : 'No classes'}</small></span>${countdown(o.d, now)}</button>`);
+      });
+      const exams = EVENTS.filter(e => e.cat === 'Examination Activities' && e.en >= today0);
+      if (exams.length) {
+        const nx = exams[0], short = (nx.event.match(/MSE\s*1|MSE\s*2|ESE|Make-up|Practical/) || ['Exams'])[0];
+        alerts.push(`<button class="alert-row" ${a('event', nx.i)}><span class="ic" style="background:var(--exam-bg);color:var(--exam)">${I('note', 14)}</span><span class="al-main"><b>${short} · ${fmtDay(nx.s)}–${fmtDay(nx.en)}</b><small>${esc(nx.event)}</small></span>${covers(nx, now) ? count('live', 'hot') : countdown(nx.s, now)}</button>`);
+      }
+      const nh = EVENTS.find(e => e.cat === 'Holidays' && e.s >= addDays(today0, 1));
+      if (nh) alerts.push(`<button class="alert-row" ${a('event', nh.i)}><span class="ic" style="background:var(--holiday-bg);color:var(--holiday)">${I('sun', 14)}</span><span class="al-main"><b>${esc(nh.event)}</b><small>${fmtDayW(nh.s)}</small></span>${countdown(nh.s, now)}</button>`);
+      if (alerts.length) html += `<div class="card">${cardH('bolt', 'ALERTS')}<div class="card-b" style="padding-top:4px">${alerts.slice(0, 4).join('')}</div></div>`;
+      html += `<div class="card stretch">${cardH('cal', 'COMING UP', btn('All →', 'goto', 'calendar', 'linkbtn'))}<div class="evlist">`;
+      let lastM = -1;
+      EVENTS.filter(e => e.en >= today0).slice(0, 7).forEach(e => {
+        const mo = e.s.getMonth();
+        if (mo !== lastM) { html += `<div class="grp-h">${MONTHS[mo]} ${e.s.getFullYear()}</div>`; lastM = mo; }
+        html += `<button class="ev-row" ${a('event', e.i)}><span class="ev-date" aria-hidden="true"><b>${e.s.getDate()}</b><small>${dow3(e.s)}</small></span><span class="ev-main"><b>${esc(e.event)}</b><small>${CAT[e.cat].short}${e.en > e.s ? ' · through ' + fmtDay(e.en) : ''}</small></span>${covers(e, now) ? count('live', 'hot') : countdown(e.s, now)}</button>`;
+      });
+      html += '</div></div></div></div>';
+      $('#view-today').innerHTML = html;
+    }
+    function ttCellHTML(day, s, now) {
+      const c = s.course || {}, st = getStatus(now);
+      const live = st.eff_day === day && st.current === s;
+      const pct = live ? pctOf(s, st.mins) : 0;
+      const bits = [c.code ? esc(c.code) : '', c.faculty ? esc(c.faculty) : ''].filter(Boolean).join(' · ') || (c.editable ? 'Elective II' : '');
+      return `<td colspan="${s.span}" class="tt-cell t-${typeInfo(c.type).cls}${state.ttTypes.has(c.type) ? '' : ' dim'}${live ? ' live' : ''}" ${a('course', c.key || '')}${live ? ` style="background-image:linear-gradient(90deg, ${typeInfo(c.type).fill} ${pct}%, transparent ${pct}%)"` : ''} tabindex="0" aria-label="${esc(c.name || '')}, ${day}, period ${s.periods[0]}">${s.span > 1 ? `<em>×${s.span}</em>` : ''}<b>${esc(c.abbr || c.name || '')}</b>${bits ? `<small>${bits}</small>` : ''}${c.room ? `<span class="room">${I('pin', 10)}${esc(c.room)}</span>` : ''}</td>`;
+    }
+    function renderTimetable() {
+      const now = new Date(), st = getStatus(now);
+      let html = `<div class="vhead"><div><h1>Timetable</h1><div class="sub">${SEM_LABEL} · starts ${fmtMin(P_START)} daily · tap a class for details</div></div><div class="chips tt-filters" role="group" aria-label="Filter by course type">${TYPES.map(t => `<button class="chip${state.ttTypes.has(t) ? ' on' : ''}" ${a('tttype', t)} aria-pressed="${state.ttTypes.has(t)}" style="--c:${typeInfo(t).var}"><span class="dot"></span>${t}</button>`).join('')}</div></div>`;
+      const today0 = day0(now);
+      const ovs = Object.values(OV).filter(o => o.d >= today0).sort((a, b) => a.d - b.d).slice(0, 2);
+      if (ovs.length) html += `<div class="endnote flush">${I('bolt')} ${ovs.map(o => `${fmtDay(o.d)}: ${o.status === 'working' ? esc(DOW_SHORT[o.follows] || o.follows) + ' timetable' : 'closed'}`).join(' · ')}</div>`;
+      html += `<div class="card tt-desktop"><div class="tt-scroll"><table class="tt"><thead><tr><th class="tt-daycell"></th>`;
+      DATA.timetable.periods.labels.forEach(l => {
+        if (l === 'lunch') { html += `<th style="width:78px">${I('utens', 12)}<b style="font-size:10px">60 min</b></th>`; return; }
+        html += `<th scope="col"><b>P${l}</b><span class="mono" style="font-size:9.5px">${fmtMin(P_BY_LABEL[l].start)}</span></th>`;
+      });
+      html += '</tr></thead><tbody>';
+      DAYS.forEach(day => {
+        const covered = new Set();
+        let row = `<tr><th scope="row" class="tt-daycell${st.eff_day === day ? ' today-col' : ''}"><b>${DOW_SHORT[day]}</b><small>${fmtDur(dayMinutes(day))}</small></th>`;
+        DATA.timetable.periods.labels.forEach(l => {
+          if (l === 'lunch') { row += `<td class="t-lunch"><span>LUNCH</span><small>${h12(LUNCH.start)}–${h12(LUNCH.end)} ${mer(LUNCH.end)}</small></td>`; return; }
+          if (covered.has(l)) return;
+          const s = SESSIONS[day].find(x => x.periods[0] === l);
+          if (s) { s.periods.forEach(p => covered.add(p)); row += ttCellHTML(day, s, now); }
+          else row += '<td class="t-free" aria-label="free period">·</td>';
+        });
+        html += row + '</tr>';
+      });
+      html += '</tbody></table></div></div>';
+      html += `<div class="tt-dayview"><div class="daytabs">${DAYS.map(d => `<button class="${state.ttDay === d ? 'on' : ''}" ${a('ttday', d)} aria-pressed="${state.ttDay === d}">${DOW_SHORT[d]}${st.eff_day === d ? ' ●' : ''}</button>`).join('')}</div><div class="card"><div class="card-b tight">${sessionListHTML(state.ttDay, now, state.ttDay === st.eff_day)}</div></div></div>`;
+      $('#view-timetable').innerHTML = html;
+    }
+    const monthBoundsOK = (y, m) => {
+      const t = new Date(y, m, 1);
+      return t >= new Date(RADAR_S.getFullYear(), RADAR_S.getMonth(), 1) && t <= new Date(RADAR_E.getFullYear(), RADAR_E.getMonth() + 1, 1);
+    };
+    function renderCalendar() {
+      const now = new Date(), today0 = day0(now);
+      const y = state.calMonth.getFullYear(), m = state.calMonth.getMonth();
+      const chips = CATS.map(c => {
+        const on = state.calFilters.has(c);
+        return `<button class="chip${on ? ' on' : ''}" ${a('calcat', c)} aria-pressed="${on}" style="--c:${CAT[c].col}"><span class="dot"></span>${CAT[c].short} ${count(EVENTS.filter(e => e.cat === c).length)}</button>`;
+      }).join('');
+      let html = `<div class="vhead"><div><h1>Academic Calendar</h1><div class="sub">${SEM_TOTAL} academic days · ${MON3[RADAR_S.getMonth()]} ${RADAR_S.getFullYear()} – ${MON3[RADAR_E.getMonth()]} ${RADAR_E.getFullYear()}</div></div><div class="chips" role="group" aria-label="Filter by category">${chips}</div></div><div class="cal-layout"><div class="col">`;
+      html += `<div class="card cal-card"><div class="cal-head"><div class="nav-mini">${btn('‹', 'calPrev', '', 'nav-mini-btn', monthBoundsOK(y, m - 1) ? '' : 'disabled aria-label="Previous month"')}</div><h3>${MONTHS[m]} ${y}</h3><div class="nav-mini">${btn('›', 'calNext', '', 'nav-mini-btn', monthBoundsOK(y, m + 1) ? '' : 'disabled aria-label="Next month"')}</div></div><div class="cal-grid">${['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="cal-dow" aria-hidden="true">${d}</div>`).join('')}`;
+      const first = new Date(y, m, 1), off = (first.getDay() + 6) % 7;
+      let d = new Date(first);
+      d.setDate(d.getDate() - off);
+      for (let i = 0; i < 42; i++) {
+        const inM = d.getMonth() === m, k = dk(d);
+        const evs = eventsOn(d).filter(e => state.calFilters.has(e.cat));
+        const ov = ovOn(d);
+        const canvas = ov ? (ov.status === 'working' ? ' is-override' : ' is-closed')
+          : HOLIDAYS.has(k) ? ' is-closed'
+          : EXAMDAYS.has(k) ? ' is-exam'
+          : (d.getDay() === 0 || (d.getDay() === 6 && !isWorkingSat(d))) ? ' is-offday' : '';
+        const dots = CAT_ORDER.filter(c => evs.some(e => e.cat === c))
+          .map(c => `<i style="background:${CAT[c].col}" title="${CAT[c].short}"></i>`).join('');
+        const shown = evs
+          .filter(e => e.en > e.s && e.cat !== 'Examination Activities')
+          .sort((a, b) => SPAN_SLOT[a.i] - SPAN_SLOT[b.i] || a.s - b.s)
+          .slice(0, 2);
+        const lanes = [null, null];
+        shown.forEach(e => {
+          const p = SPAN_SLOT[e.i];
+          if (lanes[p] == null) lanes[p] = e; else if (lanes[1 - p] == null) lanes[1 - p] = e;
+        });
+        const spans = shown.length ? lanes.map((e, r) => e
+          ? `<i class="s${r} ${sameDay(e.s, d) ? 'start' : sameDay(e.en, d) ? 'end' : ''}" style="background:${CAT[e.cat].col}"></i>`
+          : '<i class="ph"></i>').join('') : '';
+        const stTxt = ov ? ', ' + ovLabel(ov) : HOLIDAYS.has(k) ? ', closed' : EXAMDAYS.has(k) ? ', exam window' : '';
+        html += `<button class="cal-cell${inM ? '' : ' out'}${sameDay(d, now) ? ' today' : ''}${k === state.calSel ? ' sel' : ''}${canvas}" ${a('cald', k)} aria-label="${fmtDayFull(d)}${stTxt}${evs.length ? ', ' + evs.length + ' event' + (evs.length > 1 ? 's' : '') : ''}"><span class="n">${d.getDate()}</span><span class="cal-dots">${dots}</span>${spans ? `<span class="cal-spans">${spans}</span>` : ''}</button>`;
+        d.setDate(d.getDate() + 1);
+      }
+      html += `</div><div class="cal-legend"><span><i class="lg cl"></i>closed / holiday</span><span><i class="lg ex"></i>exam window</span><span><i class="lg ov-legend"></i>override (circular)</span><span><i class="lg dt"></i>events · priority order</span><span><i class="lg br"></i>multi-day span</span></div></div>`;
+      const span = RADAR_E - RADAR_S, pos = d => (d - RADAR_S) / span * 100;
+      const majors = EVENTS.filter(e => e.cat === 'Examination Activities');
+      let bars = '', labs = '';
+      majors.forEach((e, i) => {
+        bars += `<div class="bar" ${a('event', e.i)} title="${esc(e.event)}" role="button" tabindex="0" aria-label="${esc(e.event)}" style="left:${pos(e.s).toFixed(2)}%;width:${Math.max(.7, pos(addDays(e.en, 1)) - pos(e.s)).toFixed(2)}%;top:calc(50% - 14px + ${(i % 3) * 8}px)"></div>`;
+      });
+      for (let d = new Date(RADAR_S); d <= RADAR_E; d = new Date(d.getFullYear(), d.getMonth() + 1, 1))
+        labs += `<span class="mlab" style="left:${(pos(d) + 1.5).toFixed(2)}%">${MON3[d.getMonth()]}</span>`;
+      html += `<div class="card radar-card">${cardH('pulse', 'EXAM RADAR', count(majors.length + ' windows'))}<div class="card-b"><div class="radar"><div class="track"></div>${bars}${labs}${now >= RADAR_S && now <= RADAR_E ? `<div class="todayln" style="left:${pos(now).toFixed(2)}%"></div>` : ''}</div></div></div></div><div class="col">`;
+      const [sy, sm, sd] = state.calSel.split('-').map(Number);
+      const selD = new Date(sy, sm - 1, sd);
+      const selOv = ovOn(selD);
+      const selEvs = eventsOn(selD).filter(e => state.calFilters.has(e.cat));
+      html += `<div class="card sel-card">${cardH('cal', fmtDayFull(selD).toUpperCase())}<div class="card-b" style="padding-top:4px">`;
+      if (selOv) html += `<button class="endnote" style="margin:6px 0" ${a('ovopen', dk(selD))}>${I('bolt')} ${ovLabel(selOv)}</button>`;
+      if (selEvs.length) selEvs.forEach(e => {
+        const total = diffDays(e.en, e.s) + 1;
+        html += `<button class="up-row${e.en < today0 ? ' past' : ''}" ${a('event', e.i)}><span class="tag ${CAT[e.cat].cls}">${CAT[e.cat].short}</span><span style="min-width:0;flex:1"><span class="evname">${esc(e.event)}</span><br><span class="evdate">${fmtDayW(e.s)}${e.en > e.s ? ' – ' + fmtDay(e.en) : ''}${total > 1 ? ' · day ' + (diffDays(selD, e.s) + 1) + '/' + total : ''}</span></span>${covers(e, now) ? count('live', 'hot') : ''}</button>`;
+      });
+      else if (!selOv) html += '<div class="empty" style="padding:18px">Nothing scheduled.</div>';
+      html += '</div></div>';
+      const monthEvs = EVENTS.filter(e => state.calFilters.has(e.cat) && e.s.getFullYear() === y && e.s.getMonth() === m);
+      html += `<div class="card stretch month-card">${cardH('list', 'THIS MONTH', count(monthEvs.length))}<div class="evlist scroll">`;
+      html += monthEvs.length ? monthEvs.map(e => `<button class="ev-row${e.en < today0 ? ' past' : ''}" ${a('event', e.i)}><span class="ev-date" aria-hidden="true"><b>${e.s.getDate()}</b><small>${dow3(e.s)}</small></span><span class="ev-main"><b>${esc(e.event)}</b><small>${CAT[e.cat].short}${e.en > e.s ? ' · through ' + fmtDay(e.en) : ''}</small></span>${covers(e, now) ? count('live', 'hot') : countdown(e.s, now)}</button>`).join('') : '<div class="empty">No events this month.</div>';
+      html += '</div></div></div></div>';
+      $('#view-calendar').innerHTML = html;
+    }
+    const meetLine = c => c.meet.length ? c.meet.map(m => `${DOW_SHORT[m.day]} P${m.periods[0]}${m.periods.length > 1 ? '–' + m.periods.at(-1) : ''}`).join(' · ') : 'Schedule TBA';
+    function renderCourses() {
+      const all = Object.values(COURSES).slice().sort((a, b) => (b.credits || 0) - (a.credits || 0) || (a.abbr || a.code || '').localeCompare(b.abbr || b.code || ''));
+      const n = t => all.filter(c => c.type === t).length;
+      let html = `<div class="vhead"><div><h1>Courses</h1><div class="sub">${all.length} courses · ${all.reduce((a, c) => a + (c.credits || 0), 0)} credits · ${SEM_LABEL}</div></div></div><div class="chips" style="margin-bottom:16px" role="group" aria-label="Filter courses">${['All', ...TYPES].map(t => `<button class="chip${state.courseFilter === t ? ' on' : ''}" ${a('cfilter', t)} aria-pressed="${state.courseFilter === t}">${t} ${count(t === 'All' ? all.length : n(t))}</button>`).join('')}</div><div class="course-grid">`;
+      all.filter(c => state.courseFilter === 'All' || c.type === state.courseFilter).forEach(c => {
+        html += `<button class="cc" ${a('course', c.key)} style="--tc:${typeInfo(c.type).var}"><div class="top"><span class="abbr">${esc(c.abbr || c.code)}</span><span class="tag ${typeInfo(c.type).cls}">${c.type}</span></div><div class="name">${esc(c.name)}</div><div class="cc-foot"><span class="cr">${c.credits} cr</span><span class="days">${c.meet.length ? [...new Set(c.meet.map(m => DOW_SHORT[m.day]))].join(' · ') : 'Schedule TBA'}</span><span class="go">${I('chev', 12)}</span></div></button>`;
+      });
+      html += '</div>';
+      $('#view-courses').innerHTML = html;
+    }
+    function trapFocus(e, container) {
+      if (e.key !== 'Tab') return;
+      const focusables = Array.from(container.querySelectorAll(
+        'button:not([disabled]):not([hidden]), [href], input:not([disabled]):not([hidden]), select:not([disabled]):not([hidden]), textarea:not([disabled]):not([hidden]), [tabindex]:not([tabindex="-1"])'
+      )).filter(el => el.offsetParent !== null || getComputedStyle(el).visibility !== 'hidden');
+      if (!focusables.length) { e.preventDefault(); return; }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first || !container.contains(document.activeElement)) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !container.contains(document.activeElement)) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    function openModal(html) {
+      if (DOM.ov.hidden) state._prevFocus = document.activeElement;
+      DOM.modal.innerHTML = html;
+      DOM.ov.hidden = false;
+      document.body.style.overflow = 'hidden';
+      const focusTarget = DOM.modal.querySelector('.x') || DOM.modal.querySelector('button, input');
+      focusTarget?.focus();
+    }
+    const closeModal = () => {
+      DOM.ov.hidden = true;
+      document.body.style.overflow = '';
+      if (state._prevFocus && typeof state._prevFocus.focus === 'function') {
+        state._prevFocus.focus();
+        state._prevFocus = null;
+      }
+    };
+    function openCourse(key) {
+      const c = COURSES[key];
+      if (!c) return;
+      if (c.editable) state._lastEditedKey = key;
+      const st = getStatus();
+      const meets = c.meet.length
+        ? c.meet.map(m => `<div class="meet-row"><span><b>${DOW_SHORT[m.day]}</b> · P${m.periods[0]}${m.periods.length > 1 ? '–' + m.periods.at(-1) : ''}</span><span class="mono">${fmtRange(m.start, m.end)}</span>${st.eff_day === m.day && st.current && st.current.start === m.start ? '<span class="live-tag">● NOW</span>' : ''}</div>`).join('')
+        : '<div class="meet-row"><span>Schedule TBA</span></div>';
+      const isEditable = !!c.editable;
+      const peData = (isEditable && state.pe[key]) || {};
+      const editableForm = isEditable ? `<h4 class="set-h">Your elective details <span class="pe-hint">· saved on this device</span></h4><div class="pe-form"><input id="peName" placeholder="Elective name (e.g. Cloud Computing)" value="${esc(peData.name || '')}" aria-label="Elective name"><input id="peFac" placeholder="Faculty (e.g. VG)" value="${esc(peData.faculty || '')}" aria-label="Faculty"><input id="peRoom" placeholder="Room" value="${esc(peData.room || '')}" aria-label="Room"></div>` : '';
+      openModal(`${modalHead(typeInfo(c.type).var, `<span class="tag ${typeInfo(c.type).cls}">${c.type}</span><h3>${esc(c.abbr ? c.abbr + ' — ' + c.name : c.name)}</h3>`)}<div class="modal-b"><div class="specs">${spec('Code', c.code ? esc(c.code) : (isEditable ? 'Elective' : 'TBA'))}${spec('Credits', c.credits)}${spec('Faculty', c.faculty ? esc(c.faculty) : '—')}${spec('Room', c.room ? esc(c.room) : (isEditable ? 'varies' : '—'))}</div><h4 class="set-h">Weekly slots</h4><div class="meet-grid">${meets}</div>${editableForm}<div class="modal-foot">${btn('Close', 'close')}${isEditable ? btn(`${I('check')} Save`, 'pe-save', '', 'btn primary') : ''}${btn('Show in timetable', 'showtt', c.key, isEditable ? 'btn' : 'btn primary')}</div></div>`);
+    }
+    function openEvent(i) {
+      const e = EVENTS[i];
+      if (!e) return;
+      const now = new Date(), total = diffDays(e.en, e.s) + 1;
+      const status = covers(e, now) ? count('now', 'hot') : (e.s > now ? countdown(e.s, now) : count('past'));
+      openModal(`${modalHead(CAT[e.cat].col, `<span class="tag ${CAT[e.cat].cls}">${CAT[e.cat].short}</span> ${status}<h3>${esc(e.event)}</h3>`)}<div class="modal-b"><div class="specs">${spec('When', fmtDayW(e.s) + (e.en > e.s ? ' – ' + fmtDay(e.en) : '') + ' ' + e.s.getFullYear())}${spec('Duration', total + ' day' + (total > 1 ? 's' : ''))}${spec('Category', esc(e.cat))}</div><div class="modal-foot">${btn('Close', 'close')}${btn(`${I('cal')} Show month`, 'monthof', e.i, 'btn primary')}</div></div>`);
+    }
+    function openOverride(k) {
+      const o = OV[k];
+      if (!o) return;
+      const work = o.status === 'working';
+      openModal(`${modalHead(work ? 'var(--accent)' : 'var(--holiday)', `<span class="tag ${work ? 'override' : 'holidays'}">${work ? 'Teaching day' : 'Closed'}</span> ${countdown(o.d)}<h3>${fmtDayFull(o.d)}</h3>`)}<div class="modal-b"><div class="specs">${spec('Status', work ? 'Working day' : 'No classes')}${work ? spec('Follows', esc(o.follows) + ' timetable') : spec('Regular day', DOW[o.d.getDay()])}${spec('Via', 'Circular')}</div><div class="modal-foot">${btn('Close', 'close')}${btn(`${I('cal')} Show in calendar`, 'ovcal', k, 'btn primary')}</div></div>`);
+    }
+    function openSettings() {
+      const installHTML = isStandalone()
+        ? `<div class="installed-row">${I('check', 16)}<div><b>Installed</b><small>Running as an app on this device.</small></div></div>`
+        : `<p class="pe-note" style="margin:0 0 10px">Adds CampusFlow to your home screen / app launcher. If no prompt appears, use your browser menu → "Add to Home screen" or "Install app".</p>${btn(`${I('dl')} Install app`, 'install', '', 'btn primary', deferredPrompt ? '' : 'hidden')}`;
+      const metaHTML = META.updated ? `<h4 class="set-h">Data bundle</h4><div class="rowline" style="border-bottom:0;flex-wrap:wrap"><span>Timetable last updated</span><span class="keys" style="font-size:12px">${fmtFullDate(new Date(META.updated))}</span></div>` : '';
+      openModal(`${modalHead('', '<h3>Settings</h3>')}<div class="modal-b"><h4 class="set-h">Install on this device</h4>${installHTML}${metaHTML}<h4 class="set-h">Keyboard shortcuts</h4><div class="rowline"><span>Search anything</span><span class="keys"><span class="kbd">Ctrl</span><span class="kbd">K</span><em style="font-style:normal;font-size:10px">⌘ K on Mac</em></span></div><div class="rowline"><span>Switch tabs</span><span class="keys"><span class="kbd">1</span>–<span class="kbd">4</span></span></div><div class="rowline"><span>Collapse sidebar (desktop)</span><span class="keys"><span class="kbd">[</span></span></div><div class="rowline"><span>Close / back</span><span class="keys"><span class="kbd">Esc</span></span></div></div>`);
+    }
+    const INDEX = [];
+    const addIdx = (t, s, k, go, w = '') => INDEX.push({ t, s, k, w: `${t} ${s} ${w}`.toLowerCase(), tl: t.toLowerCase(), go });
+    function buildIndex() {
+      INDEX.length = 0;
+      Object.values(COURSES).forEach(c => addIdx(c.abbr || c.name, `${c.code || 'Elective'} · ${c.type} · ${c.faculty || '—'}`, 'Course', () => openCourse(c.key), `${c.name} ${c.code || ''}`));
+      EVENTS.forEach(e => addIdx(e.event, `${fmtDay(e.s)}${e.en > e.s ? ' – ' + fmtDay(e.en) : ''} · ${CAT[e.cat].short}`, 'Event', () => openEvent(e.i), `${e.event} ${e.cat}`));
+      [...new Set(Object.values(COURSES).flatMap(c => (c.faculty || '').split('/').map(s => s.trim())))].filter(Boolean).forEach(f => {
+        const cs = Object.values(COURSES).filter(c => (c.faculty || '').split('/').map(s => s.trim()).includes(f));
+        addIdx(f, cs.map(c => c.abbr || c.name).join(', '), 'Faculty', () => openCourse(cs[0].key));
+      });
+      Object.values(COURSES).filter(c => c.room).forEach(c => addIdx(c.room, `${c.abbr || c.name} · ${meetLine(c)}`, 'Room', () => openCourse(c.key)));
+      [['Today', 'Go to dashboard', 'today'], ['Timetable', 'Weekly schedule', 'timetable'], ['Calendar', 'Academic calendar', 'calendar'], ['Courses', 'All courses', 'courses']].forEach(([t, s, g]) => addIdx(t, s, 'Go to', () => setTab(g)));
+    }
+    buildIndex();
+
+    const openPalette = () => {
+      state._prevPalFocus = document.activeElement;
+      DOM.pal.hidden = false;
+      DOM.palIn.value = '';
+      renderPalette('');
+      setTimeout(() => DOM.palIn.focus(), 40);
+    };
+    const closePalette = () => {
+      DOM.pal.hidden = true;
+      if (state._prevPalFocus && typeof state._prevPalFocus.focus === 'function') {
+        state._prevPalFocus.focus();
+        state._prevPalFocus = null;
+      }
+    };
+    function renderPalette(q = '') {
+      q = q.trim().toLowerCase();
+      state.palIdx = 0;
+      const list = q
+        ? INDEX.filter(x => x.w.includes(q)).sort((a, b) => b.tl.startsWith(q) - a.tl.startsWith(q)).slice(0, 9)
+        : INDEX.slice(0, 7);
+      state.palResults = list;
+      DOM.palList.innerHTML = list.length
+        ? list.map((x, i) => `<button class="pal-item${i === 0 ? ' on' : ''}" ${a('pal', i)}><span style="min-width:0"><b>${esc(x.t)}</b><small>${esc(x.s)}</small></span><span class="k">${x.k}</span></button>`).join('')
+        : `<div class="pal-empty">No matches for "${esc(q)}" — try a course code (CS310L), faculty (RSR) or event (MSE1).</div>`;
+    }
+    function paintPal() {
+      const items = DOM.palList.querySelectorAll('.pal-item');
+      items.forEach((el, i) => el.classList.toggle('on', i === state.palIdx));
+      items[state.palIdx]?.scrollIntoView({ block: 'nearest' });
+    }
+    DOM.palIn.addEventListener('input', e => renderPalette(e.target.value));
+    DOM.palIn.addEventListener('keydown', e => {
+      const n = state.palResults.length;
+      if (!n) return;
+      
+      const keyMap = {
+        ArrowDown: () => { state.palIdx = (state.palIdx + 1) % n; paintPal(); },
+        ArrowUp: () => { state.palIdx = (state.palIdx - 1 + n) % n; paintPal(); },
+        Enter: () => { if (state.palResults[state.palIdx]) { closePalette(); state.palResults[state.palIdx].go(); } }
+      };
+      
+      if (keyMap[e.key]) {
+        e.preventDefault();
+        keyMap[e.key]();
+      }
+    });
+
+    const TABS = [['today', 'Today', 'Today'], ['timetable', 'Timetable', 'Classes'], ['calendar', 'Calendar', 'Calendar'], ['courses', 'Courses', 'Courses']];
+    function buildNav() {
+      const sideBtn = t => `<button class="nav-btn" ${a('tab', t[0])} title="${t[1]}">${navSVG(t[0])}<span class="nav-lb">${t[1]}</span></button>`;
+      const bottomBtn = t => `<button class="bb-btn" ${a('tab', t[0])}>${navSVG(t[0])}${t[2]}</button>`;
+      DOM.sideNav.innerHTML = TABS.map(sideBtn).join('') + `<button class="nav-btn" ${a('settings')} title="Settings">${navSVG('more')}<span class="nav-lb">Settings</span></button>`;
+      DOM.bottomNav.innerHTML = TABS.map(bottomBtn).join('') + `<button class="bb-btn" ${a('settings')}>${navSVG('more')}More</button>`;
+    }
+    const TAB_TITLES = {
+      today: 'Today · CampusFlow',
+      timetable: 'Timetable · CampusFlow',
+      calendar: 'Academic Calendar · CampusFlow',
+      courses: 'Courses · CampusFlow',
+    };
+    let lastAnnouncedStatus = '';
+    function announceStatus(msg) {
+      const el = $('#liveAnnouncer');
+      if (!el || !msg || msg === lastAnnouncedStatus) return;
+      lastAnnouncedStatus = msg;
+      el.textContent = msg;
+    }
+
+    const RENDERERS = { today: renderToday, timetable: renderTimetable, calendar: renderCalendar, courses: renderCourses };
+    const renderActive = () => RENDERERS[state.tab]?.();
+    function setTab(t) {
+      state.tab = t;
+      try { history.replaceState(null, '', '#' + t); } catch (_) {}
+      $$('.view').forEach(v => v.classList.remove('active'));
+      DOM.views[t]?.classList.add('active');
+      $$('[data-a="tab"]').forEach(b => b.classList.toggle('on', b.dataset.v === t));
+      document.title = TAB_TITLES[t] || 'CampusFlow';
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      renderActive();
+    }
+    const actions = {
+      tab: setTab,
+      goto: setTab,
+      settings: openSettings,
+      tttype: v => { toggleSet(state.ttTypes, v); renderTimetable(); },
+      ttday: v => { state.ttDay = v; renderTimetable(); },
+      cfilter: v => { state.courseFilter = v; renderCourses(); },
+      calcat: v => { toggleSet(state.calFilters, v); renderCalendar(); },
+      cald: v => { state.calSel = v; renderCalendar(); },
+      calPrev: () => {
+        const d = new Date(state.calMonth); d.setMonth(d.getMonth() - 1); state.calMonth = d;
+        const pre = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+        if (!state.calSel.startsWith(pre)) state.calSel = dk(new Date(d.getFullYear(), d.getMonth(), 1));
+        renderCalendar();
+      },
+      calNext: () => {
+        const d = new Date(state.calMonth); d.setMonth(d.getMonth() + 1); state.calMonth = d;
+        const pre = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+        const now = new Date();
+        state.calSel = (now.getFullYear() === d.getFullYear() && now.getMonth() === d.getMonth())
+          ? dk(now)
+          : (state.calSel.startsWith(pre) ? state.calSel : dk(new Date(d.getFullYear(), d.getMonth(), 1)));
+        renderCalendar();
+      },
+      event: v => openEvent(+v),
+      course: v => v && openCourse(v),
+      ovopen: v => openOverride(v),
+      ovcal: v => {
+        const [yy, mm, dd] = v.split('-').map(Number);
+        state.calMonth = new Date(yy, mm - 1, 1);
+        state.calSel = v;
+        closeModal();
+        setTab('calendar');
+      },
+      'pe-save': () => {
+        const key = state._lastEditedKey || 'PE';
+        state.pe[key] = {
+          name: $('#peName')?.value || '',
+          faculty: $('#peFac')?.value || '',
+          room: $('#peRoom')?.value || ''
+        };
+        localStorage.setItem('cf-pe', JSON.stringify(state.pe));
+        applyEditable();
+        buildIndex();
+        openCourse(key);
+        renderActive();
+        toast('Saved.');
+      },
+      monthof: v => {
+        const ev = EVENTS[+v];
+        state.calMonth = new Date(ev.s.getFullYear(), ev.s.getMonth(), 1);
+        state.calSel = dk(ev.s);
+        closeModal();
+        setTab('calendar');
+      },
+      showtt: v => {
+        const c = COURSES[v];
+        if (c?.meet.length) state.ttDay = c.meet[0].day;
+        closeModal();
+        setTab('timetable');
+        setTimeout(() => {
+          const cell = $(`.tt td[data-v="${v}"]`);
+          if (cell) { cell.classList.add('flash'); cell.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => cell.classList.remove('flash'), 2600); }
+        }, 80);
+      },
+      close: () => closeModal(),
+      pal: v => { closePalette(); state.palResults[+v]?.go(); },
+      'mib-close': (v, el) => el.closest('.mib')?.remove(),
+      install: () => doInstall(),
+    };
+
+    document.addEventListener('click', e => {
+      const T = e.target;
+      const el = T.closest('[data-a]');
+      if (el) {
+        const action = el.dataset.a;
+        const val = el.dataset.v;
+        if (actions[action]) actions[action](val, el);
+        return;
+      }
+      if (T.id === 'ov') closeModal();
+      if (T.id === 'palOv') closePalette();
+    });
+    document.addEventListener('keydown', e => {
+      const k = e.key, mod = e.metaKey || e.ctrlKey;
+      if (!DOM.ov.hidden && k === 'Tab') { trapFocus(e, DOM.modal); return; }
+      if (!DOM.pal.hidden && k === 'Tab') { trapFocus(e, DOM.pal); return; }
+      if (mod && k.toLowerCase() === 'k') { e.preventDefault(); DOM.pal.hidden ? openPalette() : closePalette(); return; }
+      if (k === 'Escape') { closeModal(); closePalette(); return; }
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (!mod && !e.altKey) {
+        if (k === '[' && window.innerWidth >= 920) return setSide(!document.body.classList.contains('side-min'));
+        if (['1', '2', '3', '4'].includes(k)) setTab(TABS[+k - 1][0]);
+      }
+    });
+    DOM.searchBtn.addEventListener('click', openPalette);
+
+    const sideToggle = DOM.sideToggle;
+    function setSide(min) {
+      document.body.classList.toggle('side-min', min);
+      try { localStorage.setItem('cf-side-min', min ? '1' : '0'); } catch (_) {}
+      const lb = min ? 'Expand sidebar' : 'Collapse sidebar';
+      sideToggle.setAttribute('aria-label', lb);
+      sideToggle.title = `${lb} ( [ )`;
+    }
+    sideToggle?.addEventListener('click', e => { setSide(!document.body.classList.contains('side-min')); if (e.detail) e.currentTarget.blur(); });
+    if (localStorage.getItem('cf-side-min') === '1') setSide(true);
+
+    const statusPhaseSig = st => `${st.off ? 'off' : 'on'}_${st.current ? st.current.start + '-' + st.current.end : 'none'}_${st.isLunch ? 'lunch' : ''}_${st.next ? st.next.start : 'none'}`;
+
+    function updateTodayLive() {
+      const now = new Date(), st = getStatus(now);
+      const phase = statusPhaseSig(st);
+      if (phase !== state._lastTodayPhase) {
+        state._lastTodayPhase = phase;
+        renderToday();
+        if (st.current) announceStatus(`${st.current.course?.name || st.current.course?.abbr || 'Class'} in session until ${fmtMin(st.current.end)}`);
+        else if (st.isLunch) announceStatus('Lunch break has started');
+        else if (st.next) announceStatus(`Next class is ${st.next.course?.name || st.next.course?.abbr} at ${fmtMin(st.next.start)}`);
+        return;
+      }
+      const view = DOM.views.today;
+      if (!view || !view.classList.contains('active')) return;
+
+      if (st.current) {
+        const pct = pctOf(st.current, st.mins);
+        const fill = view.querySelector('.now-fill');
+        if (fill) { fill.style.width = `${pct}%`; fill.setAttribute('aria-valuenow', pct); }
+        const left = view.querySelector('.now-left');
+        if (left) left.textContent = `${fmtDur(st.current.end - st.mins)} left`;
+        const pctEl = view.querySelector('.now-pct');
+        if (pctEl) pctEl.textContent = `${pct}%`;
+      } else if (st.isLunch) {
+        const pct = pctOf(LUNCH, st.mins);
+        const fill = view.querySelector('.now-fill');
+        if (fill) fill.style.width = `${pct}%`;
+        const title = view.querySelector('.now-title');
+        if (title) title.textContent = `Back in ${fmtDur(LUNCH.end - st.mins)}`;
+        const pctEl = view.querySelector('.now-pct');
+        if (pctEl) pctEl.textContent = `${pct}%`;
+      }
+
+      const liveCount = view.querySelector('.tl-row.live .count');
+      if (liveCount && st.current) {
+        liveCount.textContent = `${pctOf(st.current, st.mins)}%`;
+      }
+    }
+
+    function updateTimetableLive() {
+      const now = new Date(), st = getStatus(now);
+      const phase = `${st.eff_day}_${st.current ? st.current.start : 'none'}`;
+      if (phase !== state._lastTTPhase) {
+        state._lastTTPhase = phase;
+        const ttEl = $('.tt-scroll'), ttScroll = ttEl?.scrollLeft ?? 0;
+        renderTimetable();
+        if (ttEl) ttEl.scrollLeft = ttScroll;
+        return;
+      }
+      const liveCell = $('#view-timetable .tt-cell.live');
+      if (liveCell && st.current) {
+        const pct = pctOf(st.current, st.mins);
+        const c = st.current.course || {};
+        liveCell.style.backgroundImage = `linear-gradient(90deg, ${typeInfo(c.type).fill} ${pct}%, transparent ${pct}%)`;
+      }
+      const liveCount = $('#view-timetable .tl-row.live .count');
+      if (liveCount && st.current) {
+        liveCount.textContent = `${pctOf(st.current, st.mins)}%`;
+      }
+    }
+
+    function renderSideRing() {
+      if (!DOM.sideRing) return;
+      const di = dayInfo(new Date());
+      DOM.sideRing.innerHTML = `${ringSVG(di.idx / SEM_TOTAL, 46)}<div><div class="lbl">Semester progress</div><b>${di.idx}/${SEM_TOTAL} days</b></div>`;
+    }
+
+    setInterval(() => {
+      renderSideRing();
+      paintLiveFavicon();
+      if (DOM.ov.hidden && DOM.pal.hidden) {
+        if (state.tab === 'today') updateTodayLive();
+        else if (state.tab === 'timetable') updateTimetableLive();
+      }
+    }, 15000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        paintLiveFavicon();
+        if (state.tab === 'today') updateTodayLive();
+        else if (state.tab === 'timetable') updateTimetableLive();
+      }
+    });
+
+    const spSub = $('#spSub'); if (spSub) spSub.textContent = SEM_LABEL;
+    const brandSub = $('#brandSub'); if (brandSub) brandSub.textContent = SEM_LABEL;
+    $('meta[name="description"]').setAttribute('content', `CampusFlow — live timetable, academic calendar and course hub for ${SEM_LABEL}.`);
+    $('meta[name="apple-mobile-web-app-title"]').setAttribute('content', `CampusFlow ${META.year || ''}`.trim());
+
+    const badRefs = Object.entries(DATA.timetable.schedule || {}).flatMap(([day, s]) =>
+      s.filter(x => !COURSES[norm(x.course)]).map(x => `${day}: "${x.course}"`)
+    );
+    if (badRefs.length) console.warn('Schedule references missing courses:', badRefs);
+
+    buildNav(); renderSideRing(); paintLiveFavicon();
+    const initial = location.hash.replace('#', '');
+    setTab(TABS.some(t => t[0] === initial) ? initial : 'today');
+    if (!localStorage.getItem('cf-welcomed')) {
+      localStorage.setItem('cf-welcomed', '1');
+      setTimeout(() => toast('Welcome to CampusFlow — tap search to find anything.'), 1400);
+    }
+    const dismissSplash = () => { const s = $('#splash'); if (!s || s.classList.contains('done')) return; s.classList.add('done'); setTimeout(() => { try { s.remove(); } catch (_) { s.parentNode?.removeChild(s); } }, 350); };
+    setTimeout(dismissSplash, isStandalone() ? 120 : 450);
+  })
+  .catch(err => {
+    console.error("Failed to load app bundle:", err);
+    const spSub = document.getElementById('spSub');
+    if (spSub) spSub.textContent = 'Offline or failed to load data.';
+  });
+</script>
+</body>
+</html>
