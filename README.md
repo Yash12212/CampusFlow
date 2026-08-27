@@ -1,5 +1,7 @@
 # CampusFlow
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/59ddb3af-4028-40ce-b1d4-8176b76cf2ad/deploy-status)](https://app.netlify.com/projects/5-e/deploys)
+
 CampusFlow is a lightweight Progressive Web App for tracking a college timetable, academic calendar, and course information in one place. It is designed to feel like a native app on desktop and mobile, with offline support and quick access to the current day’s schedule.
 
 ## Features
