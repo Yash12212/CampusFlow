@@ -1,6 +1,6 @@
 // sw.js — CampusFlow Advanced Service Worker
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const APP_SHELL_CACHE = `cf-shell-${CACHE_VERSION}`;
 const WEB_FONTS_CACHE = `cf-fonts-${CACHE_VERSION}`;
 const RUNTIME_CACHE   = `cf-runtime-${CACHE_VERSION}`;
@@ -133,27 +133,28 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // --- STRATEGY D: Local Assets & Images (Cache First, Network Fallback) ---
+  // --- STRATEGY D: Local Assets & Images (Stale-While-Revalidate) ---
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
+    (async () => {
+      const cache = await caches.open(RUNTIME_CACHE);
+      const cachedResponse = await cache.match(event.request);
       
-      return fetch(event.request)
-        .then(response => {
-          // Cache successful basic responses
-          if (response && response.status === 200 && response.type === 'basic') {
-            const clone = response.clone();
-            caches.open(RUNTIME_CACHE).then(cache => cache.put(event.request, clone));
+      const fetchPromise = fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            cache.put(event.request, networkResponse.clone());
           }
-          return response;
+          return networkResponse;
         })
         .catch(() => {
-          // Final fallback for broken images
           if (event.request.destination === 'image') {
             return caches.match('./icon.png');
           }
+          return cachedResponse;
         });
-    })
+      
+      return cachedResponse || fetchPromise;
+    })()
   );
 });
 
