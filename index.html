@@ -127,6 +127,7 @@ fetch('bundle.json')
     const pctOf = (s, mins) => (s && s.end > s.start) ? clamp(Math.floor((mins - s.start) / (s.end - s.start) * 100), 0, 99) : 0;
     const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const IS_MOBILE = matchMedia('(pointer: coarse)').matches || matchMedia('(max-width: 768px)').matches;
     const META = DATA.meta || {};
     const SEM_LABEL = `${META.semester || 'Odd'} Semester ${META.year || '2026-27'}`;
     const CLASS_START = pDate(META.semStart || '03 Aug 2026');
@@ -507,7 +508,7 @@ fetch('bundle.json')
       const greet = h < 5 ? 'Burning the midnight oil' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
       const sub = [fmtDayFull(now), ...(di.idx ? [`Day ${di.idx}/${di.total}`, `Wk ${di.week}`] : ['Off day'])].join(' · ');
       let html = `<div class="greet-row"><h1>${greet}<span>.</span></h1><div class="greet-sub">${sub}</div></div>`;
-      if (META.updated) html += `<div class="data-updated">${I('clock', 11)} ${getUpdateText(META.updated)}</div>`;
+      if (META.updated) html += `<button class="data-updated" data-a="settings" type="button">${I('clock', 11)} ${getUpdateText(META.updated)}</button>`;
       if (st.off) {
         const nc = nextClassAny(now);
         const ncLabel = nc ? `${dow3(nc.d)} ${fmtMin(nc.s.start)} · ${esc(nc.s.course?.abbr || nc.s.course?.name || '')}` : '';
@@ -750,8 +751,10 @@ fetch('bundle.json')
       const installHTML = isStandalone()
         ? `<div class="installed-row">${I('check', 16)}<div><b>Installed</b><small>Running as an app on this device.</small></div></div>`
         : `<p class="pe-note" style="margin:0 0 10px">Adds CampusFlow to your home screen / app launcher. If no prompt appears, use your browser menu → "Add to Home screen" or "Install app".</p>${btn(`${I('dl')} Install app`, 'install', '', 'btn primary', deferredPrompt ? '' : 'hidden')}`;
-      const metaHTML = META.updated ? `<h4 class="set-h">Data bundle</h4><div class="rowline" style="border-bottom:0;flex-wrap:wrap"><span>Timetable last updated</span><span class="keys" style="font-size:12px">${fmtFullDate(new Date(META.updated))}</span></div>` : '';
-      openModal(`${modalHead('', '<h3>Settings</h3>')}<div class="modal-b"><h4 class="set-h">Install on this device</h4>${installHTML}${metaHTML}<h4 class="set-h">Keyboard shortcuts</h4><div class="rowline"><span>Search anything</span><span class="keys"><span class="kbd">Ctrl</span><span class="kbd">K</span><em style="font-style:normal;font-size:10px">⌘ K on Mac</em></span></div><div class="rowline"><span>Switch tabs</span><span class="keys"><span class="kbd">1</span>–<span class="kbd">4</span></span></div><div class="rowline"><span>Collapse sidebar (desktop)</span><span class="keys"><span class="kbd">[</span></span></div><div class="rowline"><span>Close / back</span><span class="keys"><span class="kbd">Esc</span></span></div></div>`);
+      const upd = new Date(META.updated);
+      const metaHTML = META.updated ? `<h4 class="set-h">Data bundle</h4><div class="rowline rowline-wrap" style="border-bottom:0"><span>Timetable last updated</span><span class="data-badge">${upd.getDate()} ${MON3[upd.getMonth()]} ${upd.getFullYear()}</span></div>` : '';
+      const shortcutsHTML = IS_MOBILE ? '' : `<h4 class="set-h">Keyboard shortcuts</h4><div class="rowline"><span>Search anything</span><span class="keys"><span class="kbd">Ctrl</span><span class="kbd">K</span><em style="font-style:normal;font-size:10px">⌘ K on Mac</em></span></div><div class="rowline"><span>Switch tabs</span><span class="keys"><span class="kbd">1</span>–<span class="kbd">4</span></span></div><div class="rowline"><span>Collapse sidebar (desktop)</span><span class="keys"><span class="kbd">[</span></span></div><div class="rowline"><span>Close / back</span><span class="keys"><span class="kbd">Esc</span></span></div>`;
+      openModal(`${modalHead('', '<h3>Settings</h3>')}<div class="modal-b"><h4 class="set-h">Install on this device</h4>${installHTML}${metaHTML}${shortcutsHTML}</div>`);
     }
     const INDEX = [];
     const addIdx = (t, s, k, go, w = '') => INDEX.push({ t, s, k, w: `${t} ${s} ${w}`.toLowerCase(), tl: t.toLowerCase(), go });

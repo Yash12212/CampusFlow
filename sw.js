@@ -1,6 +1,6 @@
 // sw.js — CampusFlow Advanced Service Worker
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const APP_SHELL_CACHE = `cf-shell-${CACHE_VERSION}`;
 const WEB_FONTS_CACHE = `cf-fonts-${CACHE_VERSION}`;
 const RUNTIME_CACHE   = `cf-runtime-${CACHE_VERSION}`;
