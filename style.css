@@ -128,7 +128,7 @@ svg{display:inline-block;vertical-align:middle;flex:none}
 .data-updated:hover{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent)}
 .data-updated svg{stroke:currentColor;flex:none}
 .data-badge{display:inline-block;padding:4px 10px;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;font-weight:700;font-family:var(--mono);white-space:nowrap}
-.rowline-wrap{gap:8px}
+.rowline-wrap{gap:8px;flex-wrap:nowrap}
 .rowline-wrap span:first-child{white-space:nowrap}
 .nowcard{overflow:hidden;position:relative;box-shadow:var(--elev-2)}
 .nowcard::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:var(--accent);z-index:1}
