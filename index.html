@@ -130,6 +130,7 @@ fetch('bundle.json')
     const IS_MOBILE = matchMedia('(pointer: coarse)').matches || matchMedia('(max-width: 768px)').matches;
     const META = DATA.meta || {};
     const SEM_LABEL = `${META.semester || 'Odd'} Semester ${META.year || '2026-27'}`;
+    const SEM_SHORT = `${META.semester || 'Odd'} Sem ’${(META.year || '2026-27').slice(2)}`;
     const CLASS_START = pDate(META.semStart || '03 Aug 2026');
     const LAST_DAY = pDate(META.semEnd || '07 Dec 2026');
     const RADAR_S = pDate(META.radarStart || '01 Jul 2026');
@@ -578,7 +579,7 @@ fetch('bundle.json')
     }
     function renderTimetable() {
       const now = new Date(), st = getStatus(now);
-      let html = `<div class="vhead"><div><h1>Timetable</h1><div class="sub">${SEM_LABEL} · starts ${fmtMin(P_START)} daily · tap a class for details</div></div><div class="chips tt-filters" role="group" aria-label="Filter by course type">${TYPES.map(t => `<button class="chip${state.ttTypes.has(t) ? ' on' : ''}" ${a('tttype', t)} aria-pressed="${state.ttTypes.has(t)}" style="--c:${typeInfo(t).var}"><span class="dot"></span>${t}</button>`).join('')}</div></div>`;
+      let html = `<div class="vhead"><div><h1>Timetable</h1><div class="sub">${SEM_SHORT} · starts ${fmtMin(P_START)}</div></div><div class="chips tt-filters" role="group" aria-label="Filter by course type">${TYPES.map(t => `<button class="chip${state.ttTypes.has(t) ? ' on' : ''}" ${a('tttype', t)} aria-pressed="${state.ttTypes.has(t)}" style="--c:${typeInfo(t).var}"><span class="dot"></span>${t}</button>`).join('')}</div></div>`;
       const today0 = day0(now);
       const ovs = Object.values(OV).filter(o => o.d >= today0).sort((a, b) => a.d - b.d).slice(0, 2);
       if (ovs.length) html += `<div class="endnote flush">${I('bolt')} ${ovs.map(o => `${fmtDay(o.d)}: ${o.status === 'working' ? esc(DOW_SHORT[o.follows] || o.follows) + ' timetable' : 'closed'}`).join(' · ')}</div>`;

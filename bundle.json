@@ -27,7 +27,7 @@
       "workingSats": [2, 4]
     },
     "dayOverrides": [
-      {}
+      { "date": "12 Sep 2026", "status": "working", "follows": "Thursday" }
     ],
     "timetable": {
       "periods": {
