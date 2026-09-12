@@ -54,7 +54,7 @@
         ],
         "Tuesday": [
           { "periods": ["1"], "course": "SE" }, { "periods": ["2"], "course": "DL&GA" }, { "periods": ["3", "4"], "course": "PE" },
-          { "periods": ["5"], "course": "ADBMS" }, { "periods": ["6"], "course": "SSFE" }
+          { "periods": ["5"], "course": "APT" }
         ],
         "Wednesday": [
           { "periods": ["1", "2"], "course": "PE" }, { "periods": ["3"], "course": "DL&GA" },
@@ -66,7 +66,7 @@
         ],
         "Friday": [
           { "periods": ["1", "2"], "course": "PSL" }, { "periods": ["3"], "course": "TOC" },
-          { "periods": ["4", "5"], "course": "APT" }, { "periods": ["6", "7"], "course": "DL&GA" }
+          { "periods": ["4"], "course": "APT" }, { "periods": ["5"], "course": "ADBMS" }, { "periods": ["6", "7"], "course": "DL&GA" }, { "periods": ["8"], "course": "SSFE" }
         ]
       }
     },
