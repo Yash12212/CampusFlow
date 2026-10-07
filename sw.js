@@ -1,6 +1,6 @@
 // sw.js — CampusFlow Advanced Service Worker
 
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v12';
 const APP_SHELL_CACHE = `cf-shell-${CACHE_VERSION}`;
 const WEB_FONTS_CACHE = `cf-fonts-${CACHE_VERSION}`;
 const RUNTIME_CACHE   = `cf-runtime-${CACHE_VERSION}`;
@@ -88,26 +88,24 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // --- STRATEGY B: Data Bundle (Stale-While-Revalidate) ---
-  // Serves cached timetable instantly, but updates it in the background for next time.
+  // --- STRATEGY B: Data Bundle (Network First + Offline Fallback) ---
+  // Always fetch fresh data, fallback to cache if offline.
   if (url.pathname.endsWith('bundle.json')) {
     event.respondWith(
       (async () => {
-        const cache = await caches.open(APP_SHELL_CACHE);
-        const cachedResponse = await cache.match(event.request);
-        
-        // Fetch promise that updates cache in background
-        const fetchPromise = fetch(event.request)
-          .then(networkResponse => {
-            if (networkResponse.ok) {
-              cache.put(event.request, networkResponse.clone());
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse); // Network failed, ensure we return cache
-
-        // Return cache immediately if it exists, otherwise wait for network
-        return cachedResponse || fetchPromise;
+        try {
+          const networkResponse = await fetch(event.request);
+          if (networkResponse.ok) {
+            const cache = await caches.open(APP_SHELL_CACHE);
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch (err) {
+          const cache = await caches.open(APP_SHELL_CACHE);
+          const cachedResponse = await cache.match(event.request);
+          if (cachedResponse) return cachedResponse;
+          throw err;
+        }
       })()
     );
     return;
